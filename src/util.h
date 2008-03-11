@@ -1,6 +1,5 @@
 #ifndef _UTIL_H
 #define _UTIL_H
-#include "mpi.h"
 
 struct Data_Node{
   int index;

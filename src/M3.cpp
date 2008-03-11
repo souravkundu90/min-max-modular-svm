@@ -11,40 +11,14 @@
 #define _M3_CPP
 
 #include "M3.h"
+
+#include "m3_master.h"
 using namespace std;
 
-#define DEBUG_IGNORE 1
 
-// debug
-#define BEGIN_DEBUG if (!DEBUG_IGNORE){
-#define END_DEBUG }
 
-// debug
-#define TIME_DEBUG_OUT debug_out << "TIME " <<  MPI_Wtime()-m3_start_time << "s ~~~~~: "
 
-// debug
-static double link_predict_time=0;
-static double link_train_time=0;
 
-//////////////////////////added by hoss
-namespace M3
-{
-  int trainLen=-1;
-  int testLen=-1;
-
-  size_t wc_l(const string &filename)
-  {
-    size_t result = 0;
-    ifstream fin(filename.c_str());
-    //    char line[READ_BUF_SIZE];
-    string line;
-    //    while(fin.getline(line,READ_BUF_SIZE)) ++result;
-    while (getline(fin,line)) ++result;
-    fin.close();
-    return result;
-  }
-}
-/////////////////////////////////////////////////////////////////////////
 
 // Test whether this process is master.
 bool M3::rank_master(int rank){

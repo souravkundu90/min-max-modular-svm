@@ -10,8 +10,8 @@ public :
 	virtual int save_model(const char*) = 0;
 	virtual int load_model(const char*) = 0;
 	virtual double* predict(Data_Sample*) = 0; 		/*normal prediction*/
-	virtual void predict(Data_Sample*,int & x,int & y,float & dirct) = 0; /*predictino using sematric pruning*/
-	virtual void predict(Data_Sample*,float* min) = 0;                /*asematric pruning. the length of the min array is equal to subset_num1*/
+	virtual void predict( Data_Sample*,int & x,int & y,float & dirct) = 0; /*predictino using sematric pruning*/
+	virtual void predict( Data_Sample*,float* min) = 0;                /*asematric pruning. the length of the min array is equal to subset_num1*/
 	virtual void free_model() = 0;
 	virtual ~Classifier(){}
 ///////////////////////////////////////////////////////////////////////////////////
