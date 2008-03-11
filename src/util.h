@@ -10,7 +10,7 @@ struct Data_Sample{
   int index;
   float label;
   int data_vector_length;
-  Data_Node * data_vector;
+  Data_Node * data_vector;  
 };
 
 struct Divide_Info{

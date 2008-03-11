@@ -13,6 +13,8 @@
 #include "M3.h"
 
 #include "m3_master.h"
+#include "m3_slave.h"
+#include "m3_run.h"
 using namespace std;
 
 
@@ -1286,6 +1288,7 @@ void M3::M3_Master::training_train_data(){
   TIME_DEBUG_OUT << "Master train done " << endl;
 
   // Wait for all train_slave free.
+  // ****************Mark:选择任意接收，填hash表。
   for (int i=M3_MASTER_RANK+1;i<m3_start_slave_process_rank;i++){
     MPI_Status mpi_status;
     MPI_Recv(&subset_info,
