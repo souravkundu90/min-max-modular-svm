@@ -1952,7 +1952,7 @@ void M3::M3_Master::handle_pipe_score(vector<bool> & test_flag){
 
   int label_len=m_index_to_label.size();
 
-  Voter * voter=M3_Factory::instance().create_voter(m3_parameter->voter_rank);//new HC_Voter;
+  Voter * voter=M3_Factory::create_voter(m3_parameter->voter_rank);//new HC_Voter;
 
   double *** score_matrix=new double ** [TEST_AND_SCORE_ALL_DATA_BUF_SIZE];
   for (int i=0;i<TEST_AND_SCORE_ALL_DATA_BUF_SIZE;i++){
@@ -2372,7 +2372,7 @@ void M3::M3_Master::score_test_data_nonpruning(vector<bool> test_flag){
 	  score_matrix[i][j]=sm;
 	}
 
-      Voter * voter=M3_Factory::instance().create_voter(m3_parameter->voter_rank);//new HC_Voter;
+      Voter * voter=M3_Factory::create_voter(m3_parameter->voter_rank);//new HC_Voter;
       voter->matrix_inverse(m_index_to_label,
 			    score_matrix);
       result_matrix << tms << ": " << endl;
@@ -2478,7 +2478,7 @@ void M3::M3_Master::score_test_data_sematric_pruning(vector<bool> test_flag){
 	}
       }
       
-      Voter * voter=M3_Factory::instance().create_voter(m3_parameter->voter_rank);//new HC_Voter;
+      Voter * voter=M3_Factory::create_voter(m3_parameter->voter_rank);//new HC_Voter;
       voter->matrix_inverse(m_index_to_label,
 			    score_matrix);
       result_matrix << index << ": " << endl;
@@ -3351,7 +3351,7 @@ void M3::M3_Slave::divide_train_data()
   }
 
   // Make divider and others(havn't new)
-  Divider * m3_divider=M3_Factory::instance().create_divider(m3_parameter->divider_rank); //new Hyper_Plane();
+  Divider * m3_divider=M3_Factory::create_divider(m3_parameter->divider_rank); //new Hyper_Plane();
   if (m_train_data_num>0)
   {
     m3_divider->parse("divide.config");
@@ -3840,13 +3840,13 @@ void M3::M3_Run::subset_node_unpackage(Data_Sample * sample_buf,
 }
 
 Classifier * M3::M3_Run::make_classifier(){
-  Classifier_Parameter* hossTemPara = M3_Factory::instance().create_parameter(m3_parameter->classifier_parameter_rank);
+  Classifier_Parameter* hossTemPara = M3_Factory::create_parameter(m3_parameter->classifier_parameter_rank);
   int * f_argc;
   char ** f_argv;
   m3_parameter->parse_as_cmd("classifier.config",&f_argc,&f_argv);
   hossTemPara->Parse(*f_argc,f_argv);
   m3_parameter->rm_parse_as_cmd(&f_argc,&f_argv);
-  Classifier* cler = M3_Factory::instance().create_classifier(m3_parameter->classifier_rank,hossTemPara);//new libsvm(hossTemPara);
+  Classifier* cler = M3_Factory::create_classifier(m3_parameter->classifier_rank,hossTemPara);//new libsvm(hossTemPara);
   delete hossTemPara;
   return cler;
 }
