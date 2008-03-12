@@ -11,7 +11,7 @@ void Hyper_Plane::divide(Data_Sample** data_sample,int sample_length,int subset_
 	{
 		rank_value[i] =0;
 	}
-/*
+
 	for(int i = 0;i<sample_length;i++)
 	{
 		Data_Sample * sample = data_sample[i];
@@ -38,7 +38,7 @@ void Hyper_Plane::divide(Data_Sample** data_sample,int sample_length,int subset_
 			}
 		}
 	}
-*/
+
 	int subset_num =(int)(sample_length/(double)subset_size+0.5);
 	double average_size = sample_length/(double)subset_num;
 	int count = 0;
