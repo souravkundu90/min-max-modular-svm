@@ -7,33 +7,19 @@ void Random_Divide::divide(Data_Sample** data_sample,int sample_length,int subse
 {
 	vector<Divide_Info> divide_info;
 	srand(time(0));
-	size_t* rank_value = new size_t[sample_length];
+	double* rank_value = new double[sample_length];
 	for(int i = 0; i<sample_length;i++)
 	{
 		rank_value[i] = rand();
 	}
-	for(int i = 0;i<sample_length;i++)
-	{
-		for(int j =i+1;j<sample_length;j++)
-		{
-			if(rank_value[i]>rank_value[j])
-			{
-				size_t temp = rank_value[i];
-				rank_value[i] = rank_value[j];
-				rank_value[j] = temp;
-				Data_Sample* p_temp = data_sample[i];
-				data_sample[i] = data_sample[j];
-				data_sample[j] = p_temp;
-			}
-		}
-	}
+	quick_sort(rank_value,data_sample,0,sample_length); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
 	int subset_num =(int)(sample_length/(double)subset_size+0.5);
 	double average_size = sample_length/(double)subset_num;
 	int count = 0;
 	Divide_Info* d_info = new Divide_Info();
 	for(int i = 0;i<subset_num-1;i++)
 	{
-		d_info->start_offset = count;
+		d_info->start_offset = count;++++++++
 		d_info->end_offset =(int)(average_size*(i+1)-1);
 		d_info->length = d_info->end_offset-d_info->start_offset+1;
 		count = d_info->end_offset+1;
