@@ -31,7 +31,7 @@ void Prior_Divide::divide(Data_Sample** data_sample,int sample_length,int subset
 	{
 		rank_value[i] = prior_info[data_sample[i]->index];
 	}
-	quick_sort(rank_value,data_sample,0,sample_length); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
+	quick_sort(rank_value,data_sample,0,sample_length-1); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
 	delete[] prior_info;
 
 #ifdef DEBUG1
