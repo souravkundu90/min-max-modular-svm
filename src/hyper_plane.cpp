@@ -24,7 +24,23 @@ void Hyper_Plane::divide(Data_Sample** data_sample,int sample_length,int subset_
 			rank_value[i] += vector[j].value;
 		}
 	}
-	quick_sort(rank_value,data_sample,0,sample_length); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
+	for(int i = 0;i<sample_length;++i)
+	{
+		for(int j =i+1;j<sample_length;++j)
+		{
+			if(rank_value[i]>rank_value[j])
+			{
+				double temp = rank_value[i];
+				rank_value[i] = rank_value[j];
+				rank_value[j] = temp;
+				Data_Sample* p_temp = data_sample[i];
+				data_sample[i] = data_sample[j];
+				data_sample[j] = p_temp;
+			}
+		}
+	}
+
+	//quick_sort(rank_value,data_sample,0,sample_length); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
 
 	int subset_num =(int)(sample_length/(double)subset_size+0.5);
 	double average_size = sample_length/(double)subset_num;
