@@ -4,9 +4,6 @@
 #include <string>
 using namespace std;
 
-// Parameter Define
-class Parameter{
-};
 
 class M3_Parameter{
   void init(string pfile_name);	/* initilalize */
@@ -103,9 +100,8 @@ class Classifier_Parameter//added by hoss
 public :
 	virtual ~Classifier_Parameter(){}
 	virtual void Parse(int argc,char ** argv){}
+	virtual void print_help(void){}
 };
 
-class SVM_Parameter:public Classifier_Parameter{
-};
 
 #endif

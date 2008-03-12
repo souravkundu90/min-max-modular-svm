@@ -10,7 +10,7 @@ public:
 	libsvm_parameter(void);
 	~libsvm_parameter(void);
 	void Parse(int argc, char* argv[]);
-	void print_help();
+	void print_help(void);
 };
 
 #endif

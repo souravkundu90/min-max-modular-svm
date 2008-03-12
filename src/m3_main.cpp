@@ -20,7 +20,6 @@ int main(int argc,char ** argv){
   }
 
   if (M3::flag_classify()){
-    cout << "~~" << endl;
     M3::classify_test_data();
   }
 
