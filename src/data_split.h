@@ -14,34 +14,39 @@ using namespace std;
 
 class Data_Split{
 
- public:
+public:
 
-  Data_Split(string f_name);
+    Data_Split(string f_name);
 
-  Data_Split(string f_name,int max_line);
+    Data_Split(string f_name,int max_line);
 
-  ~Data_Split();
+    ~Data_Split();
 
-  void init(string f_name,int max_line);
+    void init(string f_name,int max_line);
 
-  void split();
+    void split();
 
-  void split(vector<bool> t_flag);
+    void split(vector<bool> t_flag);
 
- private:
+    void multi_split();
 
-  string DATA_CONFIG;
-  string SPLIT_DIR;
+    void multi_split(vector<bool> t_flag);
 
-  string file_name;
-  int buf_size;
-  char * read_buf;
+private:
 
-  ifstream file_in;
-  ofstream data_config;
-  ofstream true_label;
-  map<double,ofstream* > label_file,flag_file;
-  map<double,int > label_size;
+    string DATA_CONFIG;
+    string SPLIT_DIR;
+
+    string file_name;
+    int buf_size;
+    char * read_buf;
+
+    ifstream file_in;
+    ofstream data_config;
+    ofstream true_label;
+    ofstream multi_label;
+    map<double,ofstream* > label_file,flag_file;
+    map<double,int > label_size;
 };
 
 #endif

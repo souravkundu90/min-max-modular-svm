@@ -24,147 +24,152 @@ using namespace std;
 
 // Test whether this process is master.
 bool M3::rank_master(int rank){
-  return rank==M3_MASTER_RANK;
+    return rank==M3_MASTER_RANK;
 }
 
 // Test whether this process is slave.
 bool M3::rank_slave(int rank){
-  return rank>=m3_start_slave_process_rank;
+    return rank>=m3_start_slave_process_rank;
 }
 
 // Test whether this process is run.
 bool M3::rank_run(int rank){
-  return rank && rank<m3_start_slave_process_rank;
+    return rank && rank<m3_start_slave_process_rank;
 }
 
 bool M3::flag_train(){
-  return m3_parameter->flag_train;
+    return m3_parameter->flag_train;
 }
 
 bool M3::flag_classify(){
-  return m3_parameter->flag_classify;
+    return m3_parameter->flag_classify;
 }
 
 bool M3::flag_compare(){
-  return m3_parameter->flag_compare;
+    return m3_parameter->flag_compare;
 }
 
 bool M3::flag_score(){
-  return m3_parameter->flag_score;
+    return m3_parameter->flag_score;
 }
 
 void M3::parse(){
-  m3_parameter=new M3_Parameter("m3.config");
+    m3_parameter=new M3_Parameter("m3.config");
 
-  //m3_parameter=new M3_Parameter();
+    //m3_parameter=new M3_Parameter();
 }
 
-void M3::initialize(int argc,
-		    char * argv[]){
+void M3::initialize(int argc,char * argv[]){
 
-  // There are some parameter need to be determined.
-  // For easy to test, I only to let them be a small const
-  m3_start_slave_process_rank=m3_parameter->running_process_num+1;
-  m3_continue_subset_size=m3_parameter->modular_size;
-  m3_subset_size=m3_parameter->subset_size;
+    // There are some parameter need to be determined.
+    // For easy to test, I only to let them be a small const
+    m3_start_slave_process_rank=m3_parameter->running_process_num+1;
+    m3_continue_subset_size=m3_parameter->modular_size;
+    m3_subset_size=m3_parameter->subset_size;
 
-  int init_flag;
-  MPI_Initialized(&init_flag);
-  if (init_flag){
-    // do something to handle this error
-  }
+    int init_flag;
+    MPI_Initialized(&init_flag);
+    if (init_flag){
+        // do something to handle this error
+    }
 
-  // Initialize and get some process informaiton
+    // Initialize and get some process informaiton
 
-  m3_start_time=MPI_Wtime();
+    m3_start_time=MPI_Wtime();
 
-  MPI_Comm_size(MPI_COMM_WORLD,
-		&m3_all_process_num);
-  MPI_Comm_rank(MPI_COMM_WORLD,
-		&m3_my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD,
+        &m3_all_process_num);
+    MPI_Comm_rank(MPI_COMM_WORLD,
+        &m3_my_rank);
 
-  if (rank_master(m3_my_rank)){
-    system("mkdir Subset");
-    system("mkdir Score");
-    system("mkdir Divide_Data_IL");
-  }
+    if (rank_master(m3_my_rank)){
+        system("mkdir Subset");
+        system("mkdir Score");
+        system("mkdir Divide_Data_IL");
+    }
 
 
-  // Middle infomation file name
-  string debug_name="out.debug_";
-  char name_tmp[20];
-  sprintf(name_tmp,
-	  "%d",
-	  m3_my_rank);
-  debug_name+=name_tmp;
-  debug_out.open(debug_name.c_str());
+    // Middle infomation file name
+    string debug_name="out.debug_";
+    char name_tmp[20];
+    sprintf(name_tmp,
+        "%d",
+        m3_my_rank);
+    debug_name+=name_tmp;
+    debug_out.open(debug_name.c_str());
 
-  //Commit Data_Sample & Data_Node
-  int data_node_len[2];
-  data_node_len[0]=1;
-  data_node_len[1]=1;
-  MPI_Datatype data_node_type[2];
-  data_node_type[0]=MPI_INT;
-  data_node_type[1]=MPI_FLOAT;
-  MPI_Aint data_node_offset[2];
-  data_node_offset[0]=0;
-  data_node_offset[1]=sizeof(int);
-  MPI_Type_struct(2,
-		  data_node_len,
-		  data_node_offset,
-		  data_node_type,
-		  &MPI_Data_Node);
-  MPI_Type_commit(&MPI_Data_Node);
+    //Commit Data_Sample & Data_Node
+    int data_node_len[2];
+    data_node_len[0]=1;
+    data_node_len[1]=1;
+    MPI_Datatype data_node_type[2];
+    data_node_type[0]=MPI_INT;
+    data_node_type[1]=MPI_FLOAT;
+    MPI_Aint data_node_offset[2];
+    data_node_offset[0]=0;
+    data_node_offset[1]=sizeof(MPI_INT);
+    MPI_Type_struct(2,
+        data_node_len,
+        data_node_offset,
+        data_node_type,
+        &MPI_Data_Node);
+    MPI_Type_commit(&MPI_Data_Node);
 
-  int data_sample_len[4];
-  data_sample_len[0]=1;
-  data_sample_len[1]=1;
-  data_sample_len[2]=1;
-  data_sample_len[3]=1;
-  MPI_Datatype data_sample_type[4];
-  data_sample_type[0]=MPI_INT;
-  data_sample_type[1]=MPI_FLOAT;
-  data_sample_type[2]=MPI_INT;
-  data_sample_type[3]=MPI_INT;	// pointer as int
-  MPI_Aint data_sample_offset[4];
-  data_sample_offset[0]=0;
-  data_sample_offset[1]=data_sample_offset[0]+sizeof(int);
-  data_sample_offset[2]=data_sample_offset[1]+sizeof(float);
-  data_sample_offset[3]=data_sample_offset[2]+sizeof(int);
-  MPI_Type_struct(4,
-		  data_sample_len,
-		  data_sample_offset,
-		  data_sample_type,
-		  &MPI_Data_Sample);
-  MPI_Type_commit(&MPI_Data_Sample);
+    int data_sample_len[6];
+    data_sample_len[0]=1;
+    data_sample_len[1]=1;
+    data_sample_len[2]=1;
+    data_sample_len[3]=1;
+    data_sample_len[4]=1;
+    data_sample_len[5]=1;
+    MPI_Datatype data_sample_type[6];
+    data_sample_type[0]=MPI_INT;
+    data_sample_type[1]=MPI_FLOAT;
+    data_sample_type[2]=MPI_INT;
+    data_sample_type[3]=MPI_POINTER;	// pointer as int
+    data_sample_type[4]=MPI_INT;
+    data_sample_type[5]=MPI_POINTER;	// pointer as int
+    MPI_Aint data_sample_offset[6];
+    data_sample_offset[0]=0;
+    data_sample_offset[1]=data_sample_offset[0]+sizeof(MPI_INT);
+    data_sample_offset[2]=data_sample_offset[1]+sizeof(MPI_FLOAT);
+    data_sample_offset[3]=data_sample_offset[2]+sizeof(MPI_INT);
+    data_sample_offset[4]=data_sample_offset[3]+sizeof(MPI_POINTER);
+    data_sample_offset[5]=data_sample_offset[4]+sizeof(MPI_INT);
+    MPI_Type_struct(6,
+        data_sample_len,
+        data_sample_offset,
+        data_sample_type,
+        &MPI_Data_Sample);
+    MPI_Type_commit(&MPI_Data_Sample);
 
-  int subset_info_len[13];
-  for (int i=0;i<13;i++)
-    subset_info_len[i]=1;
-  MPI_Datatype subset_info_type[13];
-  subset_info_type[0]=MPI_FLOAT;
-  subset_info_type[1]=MPI_FLOAT;
-  for (int i=2;i<13;i++)
-    subset_info_type[i]=MPI_INT;
-  MPI_Aint subset_info_offset[13];
-  subset_info_offset[0]=0;
-  subset_info_offset[1]=subset_info_offset[0]+sizeof(float);
-  subset_info_offset[2]=subset_info_offset[1]+sizeof(float);
-  for (int i=3;i<13;i++)
-    subset_info_offset[i]=subset_info_offset[i-1]+sizeof(int);
-  MPI_Type_struct(13,
-		  subset_info_len,
-		  subset_info_offset,
-		  subset_info_type,
-		  &MPI_Subset_Info);
-  MPI_Type_commit(&MPI_Subset_Info);
+    int subset_info_len[13];
+    for (int i=0;i<13;i++)
+        subset_info_len[i]=1;
+    MPI_Datatype subset_info_type[13];
+    subset_info_type[0]=MPI_FLOAT;
+    subset_info_type[1]=MPI_FLOAT;
+    for (int i=2;i<13;i++)
+        subset_info_type[i]=MPI_INT;
+    MPI_Aint subset_info_offset[13];
+    subset_info_offset[0]=0;
+    subset_info_offset[1]=subset_info_offset[0]+sizeof(MPI_FLOAT);
+    subset_info_offset[2]=subset_info_offset[1]+sizeof(MPI_FLOAT);
+    for (int i=3;i<13;i++)
+        subset_info_offset[i]=subset_info_offset[i-1]+sizeof(MPI_INT);
+    MPI_Type_struct(13,
+        subset_info_len,
+        subset_info_offset,
+        subset_info_type,
+        &MPI_Subset_Info);
+    MPI_Type_commit(&MPI_Subset_Info);
 
-  if (rank_master(m3_my_rank))
-    m3_master=new M3_Master;
-  else if (rank_slave(m3_my_rank))
-    m3_slave=new M3_Slave;
-  else if (rank_run(m3_my_rank))
-    m3_run=new M3_Run;
+    if (rank_master(m3_my_rank))
+        m3_master=new M3_Master;
+    else if (rank_slave(m3_my_rank))
+        m3_slave=new M3_Slave;
+    else if (rank_run(m3_my_rank))
+        m3_run=new M3_Run;
 }
 
 void M3::finalize(){
@@ -177,15 +182,7 @@ void M3::finalize(){
   TIME_DEBUG_OUT << "Total train time: " << link_train_time << endl;
   TIME_DEBUG_OUT << "Total predict time: " << link_predict_time << endl;
 
-  TIME_DEBUG_OUT << -1 << endl;
-
-
-
-  TIME_DEBUG_OUT << 0 << endl;
-
   delete m3_parameter;
-
-  TIME_DEBUG_OUT << 1 << endl;
 
   if (rank_master(m3_my_rank))
     delete m3_master;
@@ -194,9 +191,7 @@ void M3::finalize(){
   else if (rank_run(m3_my_rank))
     delete m3_run;
 
-  TIME_DEBUG_OUT << 2 << endl;
-
-   debug_out.close();
+  debug_out.close();
 
   MPI_Finalize();
 }
@@ -331,9 +326,7 @@ M3::M3_Master::M3_Master(){
 }
 
 // As name
-float M3::M3_Master::string_to_float(char * str,
-				     int ll,
-				     int rr){
+float M3::M3_Master::string_to_float(char * str,int ll,int rr){
   char temp = str[rr];
   str[rr] = 0;
   float res = atof(&(str[ll]));
@@ -342,9 +335,7 @@ float M3::M3_Master::string_to_float(char * str,
 }
 
 // As name
-int M3::M3_Master::string_to_int(char * str,
-				 int ll,
-				 int rr){
+int M3::M3_Master::string_to_int(char * str,int ll,int rr){
   char temp = str[rr];
   str[rr] = 0;
   int res = atoi(&(str[ll]));
@@ -353,8 +344,7 @@ int M3::M3_Master::string_to_int(char * str,
 }
 
 // Parse input data to our format.
-void M3::M3_Master::parse_data(char * rbuf,
-			       Data_Sample * dsp){
+void M3::M3_Master::parse_data(char * rbuf,Data_Sample * dsp){
   int i=0,pri=0;
   int len=0;
 
@@ -365,7 +355,8 @@ void M3::M3_Master::parse_data(char * rbuf,
 
   while (rbuf[i]){
     pri=++i;
-    while (rbuf[i]!=':') i++;
+    while (rbuf[i] && rbuf[i]!=':') i++;
+    if (!rbuf[i]) break;
     dsp->data_vector[len].index=string_to_int(rbuf,
 					      pri,
 					      i);
@@ -382,30 +373,30 @@ void M3::M3_Master::parse_data(char * rbuf,
 // Package sample_buf & node_buf to be continue memory space.
 // For MPI_Send.
 void M3::M3_Master::data_package(Data_Sample * sample_buf,
-				 Data_Node * node_buf,
-				 Data_Sample * sample_buf_send,
-				 Data_Node * node_buf_send,
-				 int len,
-				 float sp_l,
-				 bool * been_sent,
-				 int & sbs_len,
-				 int & nbs_len){
+                                 Data_Node * node_buf,
+                                 Data_Sample * sample_buf_send,
+                                 Data_Node * node_buf_send,
+                                 int len,
+                                 float sp_l,
+                                 bool * been_sent,
+                                 int & sbs_len,
+                                 int & nbs_len){
 
-  int sbs_offset=0,nbs_offset=0;
+    int sbs_offset=0,nbs_offset=0;
 
-  sbs_len=0;
-  nbs_len=0;
-  int i;
-  for (i=0;i<len;i++)
-    if (sp_l==sample_buf[i].label){
-      been_sent[i]=true;
-      sample_buf_send[sbs_len]=sample_buf[i];
+    sbs_len=0;
+    nbs_len=0;
+    int i;
+    for (i=0;i<len;i++)
+        if (sp_l==sample_buf[i].label){
+            been_sent[i]=true;
+            sample_buf_send[sbs_len]=sample_buf[i];
 
-      sbs_len++;
-      for (int j=0;j<sample_buf[i].data_vector_length;j++)
-	node_buf_send[nbs_len+j]=sample_buf[i].data_vector[j];
-      nbs_len+=sample_buf[i].data_vector_length;
-    }
+            sbs_len++;
+            for (int j=0;j<sample_buf[i].data_vector_length;j++)
+                node_buf_send[nbs_len+j]=sample_buf[i].data_vector[j];
+            nbs_len+=sample_buf[i].data_vector_length;
+        }
 }
 
 // Print middle information
@@ -817,7 +808,9 @@ void M3::M3_Master::load_train_data_parallel(string file_name){
   TIME_DEBUG_OUT << "master begin to split train data as label" << endl;
 
   Data_Split * data_split=new Data_Split(file_name,READ_BUF_SIZE);
-  data_split->split();
+  if (!m3_parameter->m3_multilabel)
+    data_split->split();
+  else data_split->multi_split();
   delete data_split;
 
   // debug
@@ -2686,29 +2679,53 @@ void M3::M3_Slave::parse_data(char * rbuf,
   int len=0;
 
   while (rbuf[i]!=' ') i++; 
-  dsp->index=string_to_float(rbuf,
-			     pri,
-			     i);
+  dsp->index=string_to_float(rbuf,pri,i);
   pri=++i;
   while (rbuf[i]!=' ') i++; 
-  dsp->label=string_to_float(rbuf,
-			     pri,
-			     i);
+  dsp->label=string_to_float(rbuf,pri,i);
   
   while (rbuf[i]){
     pri=++i;
     while (rbuf[i]!=':') i++;
-    dsp->data_vector[len].index=string_to_int(rbuf,
-					      pri,
-					      i);
+    dsp->data_vector[len].index=string_to_int(rbuf,pri,i);
     pri=++i;
     while (rbuf[i] && rbuf[i]!=' ') i++;
-    dsp->data_vector[len].value=string_to_float(rbuf,
-						pri,
-						i);
+    dsp->data_vector[len].value=string_to_float(rbuf,pri,i);
     len++;
   }
   dsp->data_vector_length=len;
+}
+
+void M3::M3_Slave::parse_multilabel_data(char * rbuf,Data_Sample * dsp){
+    int i=0,pri=0;
+    int len=0;
+
+    while (rbuf[i]!=' ') i++; 
+    dsp->index=string_to_float(rbuf,pri,i);
+
+    pri=++i;
+    while (rbuf[i]!=' ') i++; 
+    dsp->mlabel_len=string_to_int(rbuf,pri,i);
+
+    dsp->mlabel=new float[dsp->mlabel_len];
+    for (int k=0;k<dsp->mlabel_len;k++){
+        pri=++i;
+        while (rbuf[i]!=' ' && rbuf[i]!=',') i++;
+        dsp->mlabel[k]=string_to_float(rbuf,pri,i);
+    }
+    dsp->label=dsp->mlabel[0];
+
+    while (rbuf[i]){
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=':') i++;
+        if (!rbuf[i]) break;
+        dsp->data_vector[len].index=string_to_int(rbuf,pri,i);
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=' ') i++;
+        dsp->data_vector[len].value=string_to_float(rbuf,pri,i);
+        len++;
+    }
+    dsp->data_vector_length=len;
 }
 
 // Unpackage the load data to our struct.
@@ -3197,16 +3214,19 @@ void M3::M3_Slave::load_train_data_parallel(){
 	read_buf[index++]=cc;
       }
 
-      // debug
-//       TIME_DEBUG_OUT << "slave_process " << m3_my_rank 
-// 		     << "has read the buf: " << read_buf << endl;
+ //     // debug
+ //      TIME_DEBUG_OUT << "slave_process " << m3_my_rank << "has read the buf: " << read_buf << endl;
 
       Data_Sample * sample=new Data_Sample;
       Data_Node * node=new Data_Node[node_len];
       sample->data_vector=node;
 
-      parse_data(read_buf,
-		 sample);
+      if (!m3_parameter->m3_multilabel)
+          parse_data(read_buf,sample);
+      else {
+          
+            parse_multilabel_data(read_buf,sample);
+      }
 
       m_my_label=sample->label;
 

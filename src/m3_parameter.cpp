@@ -45,6 +45,8 @@ void M3_Parameter::init(string pfile_name){
   m3_increase_learning=false;
   increase_learning_config="subset.config_il";//il :Increase Learning
 
+  m3_multilabel=false;
+
   //  fstream config;
   //  config.open(pfile_name.c_str(),ios::in);
   ifstream config(pfile_name.c_str());
@@ -121,6 +123,9 @@ void M3_Parameter::init(string pfile_name){
       m3_increase_learning=true;
       increase_learning_config=rr;
       parse_increase_learning();
+    }
+    if (ll=="m3_multilabel"){
+        m3_multilabel=(atoi(rr.c_str())==1);
     }
   }
 

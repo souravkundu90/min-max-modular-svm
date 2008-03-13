@@ -15,8 +15,8 @@ int main(int argc,char ** argv){
 
   if (M3::flag_train()){
     M3::load_train_data();
-    M3::divide_train_data();
-    M3::training_train_data();
+//    M3::divide_train_data();
+ //   M3::training_train_data();
   }
 
   if (M3::flag_classify()){
