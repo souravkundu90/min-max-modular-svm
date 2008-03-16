@@ -29,6 +29,8 @@ namespace M3{
         int m_il_process_rank;
         map<int,vector<int> > m_il_index_inverse;//fill the sample arr pool
 
+        vector<float> m_index_to_label;//the m_index_to_label vector int master that be used in multi-label
+
         float string_to_float(char * str,
             int ll,
             int rr);
@@ -66,6 +68,10 @@ namespace M3{
         void pre_divide();
 
         void check_divide_data();
+
+        void multilabel_get_all_label();
+
+        void multilabel_sent_divide_info();
 
         void save_for_increase_learning();
 

@@ -221,6 +221,11 @@ namespace M3{
         int m_il_process_num;
         int subset_config_index;
 
+
+        map<int, vector<int>> m_process_train_subset_multinum; 
+        // the subset number of all divide in a process is not the same when does multi-label
+
+
         float string_to_float(char * str,
             int ll,
             int rr);
@@ -246,6 +251,8 @@ namespace M3{
 
         void increase_learning_pre_load();//pre fill the information
 
+        void multilabel_sent_all_label();        void multilabel_get_deivide_info();
+
         /* Not support the increase learning. */
         void load_train_data_serial(string file_name, // The file's name. 
             vector<bool> need_train_index); // The table point out which data need to be trained. 
@@ -261,6 +268,8 @@ namespace M3{
             Subset_Info & subset_info);
 
         void make_train_info();
+
+        void multilabel_make_train_info();
 
         void save_for_increase_learning();
 

@@ -1033,6 +1033,47 @@ void M3::M3_Master::check_divide_data(){
 		   << endl;
 }
 
+void M3::M3_Master::multilabel_make_train_info(){
+  int i,j;
+  m_train_task_info.clear();
+  for (i=m3_start_slave_process_rank;i<m_free_process;i++)
+      for (j=m3_start_slave_process_rank;j<m_free_process;j++)
+      if (m_process_to_label[i]!=m_process_to_label[j]){
+
+	//no retrain on the pre data
+          /*
+	if (m3_parameter->m3_increase_learning
+	    && (i-m3_start_slave_process_rank<m_il_process_num)
+	    && (j-m3_start_slave_process_rank<m_il_process_num))
+	  continue;
+        */
+
+	// Make a new task struct that handle train task information.
+    // the 3rd and 4th parameter is denote the divide infor be i versus j
+	Train_Task_Info tsi(i,
+			    j,
+			    m_process_train_subset_multinum[i][m_label_to_index[m_process_to_label[i]]],
+			    m_process_train_subset_multinum[j][m_label_to_index[m_process_to_label[i]]],
+			    m3_continue_subset_size);
+	m_train_task_info.push_back(tsi);
+
+	// debug
+	TIME_DEBUG_OUT << "The task pair " << m_train_task_info.size()
+		       << " is LABEL " << m_process_to_label[i]
+		       << " VS " << m_process_to_label[j]
+		       << " in " << i << " & " << j << endl;
+	TIME_DEBUG_OUT << " and the subset num pair is "
+		       << tsi.subset_num_1
+		       << " VS " 
+		       << tsi.subset_num_2 << endl;
+	TIME_DEBUG_OUT << " and the task_num pair is "
+		       << tsi.task_num_1
+		       << " VS " 
+		       << tsi.task_num_2 << endl;
+
+      }
+}
+
 void M3::M3_Master::make_train_info(){
   int i,j;
   m_train_task_info.clear();
@@ -1071,27 +1112,92 @@ void M3::M3_Master::make_train_info(){
       }
 }
 
+void M3::M3_Master::multilabel_sent_all_label(){
+    // Send the all-label info to the slave
+  if (m3_parameter->m3_multilabel){
+      int num_label=m_index_to_label.size();
+      float * mlabel=new float[num_label];
+      for (int i=0;i<m_index_to_label.size();i++)
+          mlabel[i]=m_index_to_label[i];
+      for (int i=m3_start_slave_process_rank;i<m_free_process;i++){
+          MPI_Send(&num_label,
+               1,
+               MPI_INT,
+               i,
+               M3_TAG,
+               MPI_COMM_WORLD);
+          MPI_Send(mlabel,
+              num_label,
+              MPI_FLOAT,
+              i,
+              M3_TAG,
+              MPI_COMM_WORLD);
+      }
+      delete [] mlabel;
+  }
+}
+
+
+void M3::M3_Master::multilabel_get_deivide_info(){
+    if (!m3_parameter->m3_multilabel)
+        return;
+    int len=m_index_to_label.size();
+    MPI_Status mpi_status;
+    int * mdivide=new int[len];
+    for (int i=m3_start_slave_process_rank;i<m_free_process;i++){
+        vector<int> subset_num;
+        subset_num.clear();
+        MPI_Recv(mdivide,
+            len,
+            MPI_INT,
+            i,
+            M3_TAG,
+            MPI_COMM_WORLD,
+            &mpi_status);
+
+        for (int j=0;j<len;j++){
+            subset_num.push_back(mdivide[j]);
+        }
+
+        // debug
+       TIME_DEBUG_OUT << " the slave process " << i << " with label " << m_process_to_label[i] << " multilabel divide info: ";
+       for (int j=0;j<len;j++)
+           debug_out << subset_num[j] << " ";
+       debug_out << endl;
+     
+       m_process_train_subset_multinum[i]=subset_num;
+
+    }
+    delete [] mdivide;
+}
+
 void M3::M3_Master::divide_train_data(){
 
-  int i;
-  int block_info[2];
-  MPI_Status mpi_status;
-  for (i=m3_start_slave_process_rank;i<m_free_process;i++){
-    // Get divide information from slave.
-    MPI_Recv(&block_info,
-	     2,
-	     MPI_INT,
-	     i,
-	     M3_TAG,
-	     MPI_COMM_WORLD,
-	     &mpi_status);
-    m_process_train_subset_num[i]=block_info[1];
-  }
+    multilabel_sent_all_label();  
 
-  // debug
-  //  check_divide_data();
+    int i;
+    int block_info[2];
+    MPI_Status mpi_status;
+    for (i=m3_start_slave_process_rank;i<m_free_process;i++){
+        // Get divide information from slave.
+        MPI_Recv(&block_info,
+            2,
+            MPI_INT,
+            i,
+            M3_TAG,
+            MPI_COMM_WORLD,
+            &mpi_status);
+        m_process_train_subset_num[i]=block_info[1];
+    }
 
-  make_train_info();
+    // debug
+    //  check_divide_data();
+
+    multilabel_get_deivide_info();
+
+    if (m3_parameter->m3_multilabel)
+        multilabel_make_train_info();
+    else make_train_info();
 }
 
 void M3::M3_Master::handle_subset_info_write(ofstream & subset_config,
@@ -1226,6 +1332,7 @@ void M3::M3_Master::training_train_data(){
 
     // Send to the data_slave which data(or subset) it will be sent.
     // And which train_slave will need them.
+    // i vs j then send the jth divide's info of label i and vice versa
     int data_process_1[4],data_process_2[4];
     data_process_1[0]=tsi.left_1();
     data_process_1[1]=tsi.right_1();
@@ -1235,6 +1342,13 @@ void M3::M3_Master::training_train_data(){
     data_process_2[1]=tsi.right_2();
     data_process_2[2]=free_process_rank;
     data_process_2[3]=m_label_to_index[m_process_to_label[tsi.process_rank_1]];
+
+
+    // if multilabel the rank1 is the major label(index i) that divide's info is saved in the place of index i
+    if (m3_parameter->m3_multilabel){
+        data_process_1[3]=m_label_to_index[m_process_to_label[tsi.process_rank_1]];
+    }
+
     MPI_Send(data_process_1,
 	     4,
 	     MPI_INT,
@@ -3340,92 +3454,161 @@ void M3::M3_Slave::check_divide_data(){
   }
 }
 
+
+void M3::M3_Slave::multilabel_get_all_label(){
+    if (!m3_parameter->m3_multilabel)
+        return;
+    int len;
+    MPI_Status mpi_status;
+    MPI_Recv(&len,
+        1,
+        MPI_INT,
+        M3_MASTER_RANK,
+        M3_TAG,
+        MPI_COMM_WORLD,
+        &mpi_status);
+    float * mlabel=new float[len];
+    MPI_Recv(mlabel,
+        len,
+        MPI_FLOAT,
+        M3_MASTER_RANK,
+        M3_TAG,
+        MPI_COMM_WORLD,
+        &mpi_status);
+    m_index_to_label.clear();
+    for (int i=0;i<len;i++)
+        m_index_to_label.push_back(mlabel[i]);
+    delete mlabel;
+}
+
+
+void M3::M3_Slave::multilabel_sent_divide_info(){
+    if (!m3_parameter->m3_multilabel)
+        return ;
+    int len=m_index_to_label.size();
+    int *num_sub=new int[len];
+    for (int i=0;i<len;i++){
+        int ti=i;
+        if (ti>=m_divide_situation_pool.size())
+            ti=m_divide_situation_pool.size()-1;
+        num_sub[i]=m_divide_situation_pool[ti].size();
+    }
+
+    // debug
+    TIME_DEBUG_OUT << "multilabel divide info: " ;
+    for (int i=0;i<len;i++)
+        debug_out << num_sub[i] << " ";
+    debug_out << endl;
+
+    MPI_Send(num_sub,
+        len,
+        MPI_INT,
+        M3_MASTER_RANK,
+        M3_TAG,
+        MPI_COMM_WORLD);
+    delete [] num_sub;
+}
+
 void M3::M3_Slave::divide_train_data()
 {
-  pre_divide();
+    pre_divide();
 
-  // debug
-  TIME_DEBUG_OUT << "slave_process " << m3_my_rank << " now begin to divide data " << endl;
+    // debug
+    TIME_DEBUG_OUT << "slave_process " << m3_my_rank << " now begin to divide data " << endl;
 
-  int send_info[2];
+    int send_info[2];
 
-  if (m_il_process_rank!=-1){
+    if (m_il_process_rank!=-1){
+        send_info[0]=m3_my_rank;
+        send_info[1]=m_divide_situation_pool[0].size();
+        MPI_Send(send_info,
+            2,
+            MPI_INT,
+            M3_MASTER_RANK,
+            M3_TAG,
+            MPI_COMM_WORLD);
+
+        // debug
+        TIME_DEBUG_OUT << "save for next" << endl;
+
+        //save_for_increase_learning();
+
+        // debug
+        TIME_DEBUG_OUT << "divide done" << endl;
+
+        return ;
+    }
+
+    // Make divider and others(havn't new)
+    Divider * m3_divider=M3_Factory::create_divider(m3_parameter->divider_rank); //new Hyper_Plane();
+    if (m_train_data_num>0)
+    {
+
+        multilabel_get_all_label();
+
+        m3_divider->parse("divide.config");
+        //     m_divide_situation=m3_divider->divide(m_sample_arr,
+        // 					  m_train_data_num,
+        // 					  m3_subset_size);//added by hoss (be a parameter)
+       // if (!m3_parameter->m3_multilabel)
+            m3_divider->divide(m_sample_arr,
+            m_train_data_num,
+            m3_subset_size,
+            m_my_label,
+            m_sample_arr_pool,
+            m_divide_situation_pool,
+            "divide_info.config");
+            /*
+        else m3_divider->divide(m_sample_arr,
+            m_train_data_num,
+            m3_subset_size,
+            m_my_label,
+            m_sample_arr_pool,
+            m_divide_situation_pool,
+            "divide_info.config",
+            m_index_to_label);
+*/
+        delete [] m_sample_arr;
+    }
+    delete m3_divider;
+
+    // debug
+    TIME_DEBUG_OUT << "slave_process " 
+        << m3_my_rank 
+        << " now finish the divide " 
+        << endl;
+
+    // Send divide informatino.
+
     send_info[0]=m3_my_rank;
-    send_info[1]=m_divide_situation_pool[0].size();
+    if (m_divide_situation_pool.size()>0)
+        send_info[1]=m_divide_situation_pool[0].size();
+    else 
+        return;			// no need to response
+
     MPI_Send(send_info,
-	     2,
-	     MPI_INT,
-	     M3_MASTER_RANK,
-	     M3_TAG,
-	     MPI_COMM_WORLD);
+        2,
+        MPI_INT,
+        M3_MASTER_RANK,
+        M3_TAG,
+        MPI_COMM_WORLD);
+
+    multilabel_sent_divide_info();
 
     // debug
-    TIME_DEBUG_OUT << "save for next" << endl;
-
-    //    save_for_increase_learning();
+    TIME_DEBUG_OUT << "slave_process " 
+        << m3_my_rank 
+        << " now has sent all info " 
+        << endl;
 
     // debug
-    TIME_DEBUG_OUT << "divide done" << endl;
+    for (int i=0;i<m_divide_situation_pool.size();i++){
+        TIME_DEBUG_OUT << "pool " << i << endl;
+        m_divide_situation=m_divide_situation_pool[i];
+        check_divide_data();
+    }
 
-    return ;
-  }
-
-  // Make divider and others(havn't new)
-  Divider * m3_divider=M3_Factory::create_divider(m3_parameter->divider_rank); //new Hyper_Plane();
-  if (m_train_data_num>0)
-  {
-    m3_divider->parse("divide.config");
-//     m_divide_situation=m3_divider->divide(m_sample_arr,
-// 					  m_train_data_num,
-// 					  m3_subset_size);//added by hoss (be a parameter)
-
-    m3_divider->divide(m_sample_arr,
-		       m_train_data_num,
-		       m3_subset_size,
-		       m_my_label,
-		       m_sample_arr_pool,
-		       m_divide_situation_pool,
-		       "divide_info.config");
-
-    delete [] m_sample_arr;
-  }
-  delete m3_divider;
-
-  // debug
-  TIME_DEBUG_OUT << "slave_process " 
-		 << m3_my_rank 
-		 << " now finish the divide " 
-		 << endl;
-
-  // Send divide informatino.
-
-  send_info[0]=m3_my_rank;
-  if (m_divide_situation_pool.size()>0)
-    send_info[1]=m_divide_situation_pool[0].size();
-  else 
-    return;			// no need to response
-
-  MPI_Send(send_info,
-	   2,
-	   MPI_INT,
-	   M3_MASTER_RANK,
-	   M3_TAG,
-	   MPI_COMM_WORLD);
-
-  // debug
-  TIME_DEBUG_OUT << "slave_process " 
-		 << m3_my_rank 
-		 << " now has sent all info " 
-		 << endl;
-
-  // debug
-  for (int i=0;i<m_divide_situation_pool.size();i++){
-    TIME_DEBUG_OUT << "pool " << i << endl;
-    m_divide_situation=m_divide_situation_pool[i];
-    check_divide_data();
-  }
-
-  save_for_increase_learning();
+    save_for_increase_learning();
 }
 
 void M3::M3_Slave::save_data_for_increase_learning(ofstream & os,
@@ -3632,6 +3815,16 @@ void M3::M3_Slave::training_train_data(){
 	subset_len[i-subset_left]=m_divide_situation[i].length;
 	sb_len+=m_divide_situation[i].length;
       }
+
+      // debug
+      BEGIN_DEBUG;
+      TIME_DEBUG_OUT << "subset_len arr:";
+      for (i=subset_left;i<=subset_right;i++){
+          debug_out << subset_len[i-subset_left] << " ";
+      }
+      debug_out << endl;
+      END_DEBUG;
+
       MPI_Send(subset_len,
 	       subset_num,
 	       MPI_INT,
@@ -3687,19 +3880,20 @@ void M3::M3_Slave::training_train_data(){
       subset_node_package(sb_len,
 			  sample_buf,
 			  node_buf);
-      // Send node_buf.
-      MPI_Send(node_buf,
-	       nb_len,
-	       MPI_Data_Node,
-	       sent_process,
-	       M3_TAG,
-	       MPI_COMM_WORLD);
 
       // debug
       TIME_DEBUG_OUT << "slave_process " 
 		     << m3_my_rank 
 		     << " package node_buf ok! now to send " 
 		     << endl;
+
+       // Send node_buf.
+      MPI_Send(node_buf,
+	       nb_len,
+	       MPI_Data_Node,
+	       sent_process,
+	       M3_TAG,
+	       MPI_COMM_WORLD);
 
       delete [] subset_len;
       delete [] sample_buf;
@@ -3971,6 +4165,12 @@ void M3::M3_Run::training_train_data(){
 	       MPI_COMM_WORLD,
 	       &mpi_status);
 
+      // debug
+//      BEGIN_DEBUG;
+      TIME_DEBUG_OUT << "train_process " << m3_my_rank << " has revc the len arr " << endl;
+      
+//      END_DEBUG;
+
       m_sample_len_1=0;
       m_sample_len_2=0;
       for (int i=0;i<m_data_subset_num_1;i++)
@@ -3978,15 +4178,12 @@ void M3::M3_Run::training_train_data(){
       for (int i=0;i<m_data_subset_num_2;i++)
 	m_sample_len_2+=m_sample_subset_len_2[i];
 
-      BEGIN_DEBUG;
       // debug
-      TIME_DEBUG_OUT << "train_process " << m3_my_rank << " has revc the len arr " << endl;
-
-      // debug
+      //BEGIN_DEBUG;    
       TIME_DEBUG_OUT << "train_process " << m3_my_rank << " get sample " 
 		     << m_sample_len_1 << " & " << m_sample_len_2<< endl;
-      END_DEBUG;
-
+      //END_DEBUG;
+ 
       // Get sample_buf from two data_slave.
       m_sample_buf_1=new Data_Sample[m_sample_len_1];
       m_sample_buf_2=new Data_Sample[m_sample_len_2];
