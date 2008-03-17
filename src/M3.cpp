@@ -54,9 +54,11 @@ bool M3::flag_score(){
 }
 
 void M3::parse(){
+    user_config * uc=new user_config;
     m3_parameter=new M3_Parameter("m3.config");
 
     //m3_parameter=new M3_Parameter();
+    delete uc;
 }
 
 void M3::initialize(int argc,char * argv[]){

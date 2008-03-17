@@ -18,6 +18,7 @@
 #include "classifier.h"
 #include "voter.h"
 #include "m3_macro.h"
+#include "user_config.h"
 /* #include "hc_voter.h" */
 /* #include "hyper_plane.h" */
 /* #include "libsvm_parameter.h" */

@@ -33,7 +33,7 @@ void M3_Parameter::init(string pfile_name){
   flag_compare=false;
   flag_score=false;
 
-  m3_min_max_mode=0;
+  m3_min_max_mode=1;
   m3_load_mode=0;
   m3_classify_mode=0;
   m3_pruning_mode=0;
@@ -81,7 +81,7 @@ void M3_Parameter::init(string pfile_name){
     if (ll=="divider_rank")
       divider_rank=atoi(rr.c_str());
     if (ll=="classifier_rank")
-      classifier_rank=atoi(rr.c_str());
+      classifier_rank=classifier_parameter_rank=atoi(rr.c_str());
     if (ll=="classifier_parameter_rank")
       classifier_parameter_rank=atoi(rr.c_str());
     if (ll=="voter_rank")

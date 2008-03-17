@@ -1,0 +1,33 @@
+#this is the config of user
+
+$run_mode$
+run_mode:[user]					#opt:		[user|debug]
+						#default:	user
+						#exp:		'user' mode will translate this file to *.config
+						#		'debug' mode will load *.config direct
+
+$m3_parameter$
+train_file:[abalonetrain.dat]					#opt:		['filename]
+test_file:[abalonetrain.dat]					#exp:		'filename is the string of file
+label_file:[Split_Data/true_label]
+
+m3_running_process_num:[3]			#opt:		['num]
+						#exp:		'num is the integer of the process number that do the main part
+m3_subset_size:[50]
+m3_module_size:[5]
+m3_test_mode:[sematric]					#opt:		[sematric|asematric|none]
+m3_test_preload_all_data:[close]			#opt:		[open|close]
+m3_divider_type:[hyper_plane]				#opt:		[hyper_plane|random|centroid|prior]
+m3_classifier_type:[svm_light]				#opt:		[libsvm|svm_light]
+m3_voter_type:[hc_voter]				#opt:		[hc_voter]
+
+
+$classifier_parameter$
+#svmlight parameters
+-t 2
+-c 1 
+-g 0.01
+
+
+$divider_parameter$
+0.1
