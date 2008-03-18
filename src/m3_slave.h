@@ -42,9 +42,6 @@ namespace M3{
         void parse_data(char * read_buf,
             Data_Sample * data_sample);
 
-        void parse_multilabel_data(char * read_buf,
-            Data_Sample * data_sample);
-
         void data_unpackage(Data_Sample * sample_buf,
             Data_Node * node_buf,
             int sp_buf_len,

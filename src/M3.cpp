@@ -347,29 +347,35 @@ int M3::M3_Master::string_to_int(char * str,int ll,int rr){
 
 // Parse input data to our format.
 void M3::M3_Master::parse_data(char * rbuf,Data_Sample * dsp){
-  int i=0,pri=0;
+    int i=0,pri=0;
   int len=0;
 
-  while (rbuf[i]!=' ') i++; 
-  dsp->label=string_to_float(rbuf,
-			     pri,
-			     i);
+  dsp->mlabel_len=1;
+  while (rbuf[i]!=' ') {
+     i++; 
+    dsp->mlabel_len+=(rbuf[i]==',');
+  }
+
+  dsp->mlabel=new float[dsp->mlabel_len];
+  i=-1;
+  for (int k=0;k<dsp->mlabel_len;k++){
+      pri=++i;
+      while (rbuf[i]!=' ' && rbuf[i]!=',') i++;
+      dsp->mlabel[k]=string_to_float(rbuf,pri,i);
+  }
+  dsp->label=dsp->mlabel[0];
 
   while (rbuf[i]){
-    pri=++i;
-    while (rbuf[i] && rbuf[i]!=':') i++;
-    if (!rbuf[i]) break;
-    dsp->data_vector[len].index=string_to_int(rbuf,
-					      pri,
-					      i);
-    pri=++i;
-    while (rbuf[i] && rbuf[i]!=' ') i++;
-    dsp->data_vector[len].value=string_to_float(rbuf,
-						pri,
-						i);
-    len++;
-  }
-  dsp->data_vector_length=len;
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=':') i++;
+        if (!rbuf[i]) break;
+        dsp->data_vector[len].index=string_to_int(rbuf,pri,i);
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=' ') i++;
+        dsp->data_vector[len].value=string_to_float(rbuf,pri,i);
+        len++;
+    }
+    dsp->data_vector_length=len;
 }
 
 // Package sample_buf & node_buf to be continue memory space.
@@ -2789,30 +2795,7 @@ int M3::M3_Slave::string_to_int(char * str,
 
 // Parse input data to our format.
 // NOTE: NOT THE SAME AS THE MASTER_LOAD_SERIAL
-void M3::M3_Slave::parse_data(char * rbuf,
-			      Data_Sample * dsp){
-  int i=0,pri=0;
-  int len=0;
-
-  while (rbuf[i]!=' ') i++; 
-  dsp->index=string_to_float(rbuf,pri,i);
-  pri=++i;
-  while (rbuf[i]!=' ') i++; 
-  dsp->label=string_to_float(rbuf,pri,i);
-  
-  while (rbuf[i]){
-    pri=++i;
-    while (rbuf[i]!=':') i++;
-    dsp->data_vector[len].index=string_to_int(rbuf,pri,i);
-    pri=++i;
-    while (rbuf[i] && rbuf[i]!=' ') i++;
-    dsp->data_vector[len].value=string_to_float(rbuf,pri,i);
-    len++;
-  }
-  dsp->data_vector_length=len;
-}
-
-void M3::M3_Slave::parse_multilabel_data(char * rbuf,Data_Sample * dsp){
+void M3::M3_Slave::parse_data(char * rbuf,Data_Sample * dsp){
     int i=0,pri=0;
     int len=0;
 
@@ -3337,12 +3320,7 @@ void M3::M3_Slave::load_train_data_parallel(){
       Data_Node * node=new Data_Node[node_len];
       sample->data_vector=node;
 
-      if (!m3_parameter->m3_multilabel)
-          parse_data(read_buf,sample);
-      else {
-          
-            parse_multilabel_data(read_buf,sample);
-      }
+      parse_data(read_buf,sample);
 
       m_my_label=sample->label;
 
@@ -3993,25 +3971,32 @@ void M3::M3_Run::parse_data(char * rbuf,
   int i=0,pri=0;
   int len=0;
 
-  while (rbuf[i]!=' ') i++; 
-  dsp->label=string_to_float(rbuf,
-			     pri,
-			     i);
+  dsp->mlabel_len=1;
+  while (rbuf[i]!=' ') {
+     i++; 
+    dsp->mlabel_len+=(rbuf[i]==',');
+  }
+
+  dsp->mlabel=new float[dsp->mlabel_len];
+  i=-1;
+  for (int k=0;k<dsp->mlabel_len;k++){
+      pri=++i;
+      while (rbuf[i]!=' ' && rbuf[i]!=',') i++;
+      dsp->mlabel[k]=string_to_float(rbuf,pri,i);
+  }
+  dsp->label=dsp->mlabel[0];
 
   while (rbuf[i]){
-    pri=++i;
-    while (rbuf[i]!=':') i++;
-    dsp->data_vector[len].index=string_to_int(rbuf,
-					      pri,
-					      i);
-    pri=++i;
-    while (rbuf[i] && rbuf[i]!=' ') i++;
-    dsp->data_vector[len].value=string_to_float(rbuf,
-						pri,
-						i);
-    len++;
-  }
-  dsp->data_vector_length=len;
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=':') i++;
+        if (!rbuf[i]) break;
+        dsp->data_vector[len].index=string_to_int(rbuf,pri,i);
+        pri=++i;
+        while (rbuf[i] && rbuf[i]!=' ') i++;
+        dsp->data_vector[len].value=string_to_float(rbuf,pri,i);
+        len++;
+    }
+    dsp->data_vector_length=len;
 }
 
 // Unpackage sample_buf as our struct.
@@ -5106,6 +5091,7 @@ void M3::M3_Run::pipe_level_classify_asematric_pruning(int mlevel,
     }
 
     // debug
+    BEGIN_DEBUG;
     TIME_DEBUG_OUT << "sample " << sample_buf[i].index << " min vector: " << endl;
     offset=0;
     for (int j=0;j<li->length;j++){
@@ -5116,6 +5102,7 @@ void M3::M3_Run::pipe_level_classify_asematric_pruning(int mlevel,
       debug_out << endl;
       offset+=li->si[j].subset_num_1;
     }
+    END_DEBUG;
 
   }
 }

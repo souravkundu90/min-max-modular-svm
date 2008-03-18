@@ -82,16 +82,11 @@ private:
         default_opt["m3_voter_type"]="1";
 
         fin.open("configure.txt");
-        _p_m3.open("m3.config");
-        _p_divider.open("divider.config");
-        _p_classifier.open("classifier.config");
+
     }
 
     void destory(){
         fin.close();
-        _p_m3.close();
-        _p_divider.close();
-        _p_classifier.close();
     }
 
     void parse_run(){
@@ -186,12 +181,18 @@ private:
 
     void write(){
         if (run_mode==1) return;
+        _p_m3.open("m3.config");
+        _p_divider.open("divider.config");
+        _p_classifier.open("classifier.config");
         for (int i=0;i<_m3.size();i++)
             _p_m3 << _m3[i] << endl;
         for (int i=0;i<_classifier.size();i++)
             _p_classifier << _classifier[i] << endl;
         for (int i=0;i<_divider.size();i++)
             _p_divider << _divider[i] << endl;
+        _p_m3.close();
+        _p_divider.close();
+        _p_classifier.close();
     }
 
 public:
