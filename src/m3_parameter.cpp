@@ -93,6 +93,8 @@ void M3_Parameter::init(string pfile_name){
     if (ll=="classify"){
       flag_classify=true;
       classify_data=rr;
+      flag_score=true;
+      classify_data=rr;
     }
     if (ll=="compare"){
       flag_compare=true;

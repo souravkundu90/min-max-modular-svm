@@ -306,9 +306,9 @@ namespace M3{
 
         void score_test_data_nonpruning(vector<bool> test_flag);
 
-        void score_file_combine_sematric_pruning(); // faint for the finit file point in OS!!!!!!!!
+        void score_file_combine_pruning(); // faint for the finit file point in OS!!!!!!!!
 
-        void score_test_data_sematric_pruning(vector<bool> test_flag);
+        void score_test_data_pruning(vector<bool> test_flag);
 
     public:
         M3_Master();

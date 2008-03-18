@@ -2522,7 +2522,7 @@ void M3::M3_Master::score_test_data_nonpruning(vector<bool> test_flag){
   delete [] score_vector;
 }
 
-void M3::M3_Master::score_file_combine_sematric_pruning(){
+void M3::M3_Master::score_file_combine_pruning(){
 
   for (int i=0;i<m_index_to_label.size()-1;i++){
     char cmb_name[10];
@@ -2558,7 +2558,7 @@ void M3::M3_Master::score_file_combine_sematric_pruning(){
   }
 }
 
-void M3::M3_Master::score_test_data_sematric_pruning(vector<bool> test_flag){
+void M3::M3_Master::score_test_data_pruning(vector<bool> test_flag){
   ofstream result(RESULT.c_str());
   ofstream result_matrix(RESULT_MATRIX.c_str());
 
@@ -2568,7 +2568,7 @@ void M3::M3_Master::score_test_data_sematric_pruning(vector<bool> test_flag){
   for (int i=0;i<label_len;i++)
     score_matrix[i]=new double[label_len];
 
-  score_file_combine_sematric_pruning();
+  score_file_combine_pruning();
 
   ifstream * file_in=new ifstream[label_len-1];
   for (int i=0;i<label_len-1;i++){
@@ -2630,8 +2630,8 @@ void M3::M3_Master::score_test_data(){
 
   if (m3_parameter->m3_pruning_mode==0)
     score_test_data_nonpruning(test_flag);
-  else if (m3_parameter->m3_pruning_mode==1 && m3_parameter->m3_pruning_combine_score==0)
-    score_test_data_sematric_pruning(test_flag);
+  else if (m3_parameter->m3_pruning_mode!=0 && m3_parameter->m3_pruning_combine_score==0)
+    score_test_data_pruning(test_flag);
 }
 
 void M3::M3_Master::compare_true_label(const string &filename){
@@ -5409,7 +5409,6 @@ void M3::M3_Run::pipe_classify_test_data_sematric_pruning(string file_name,
 void M3::M3_Run::pipe_classify_test_data_asematric_pruning(string file_name,
 							   vector<bool> test_flag,
 							   bool mid_score_save){
-
   ofstream fout;
   if (mid_score_save){
     char name[100];
@@ -5583,6 +5582,9 @@ void M3::M3_Run::classify_test_data_pruning(string file_name,
       if (flag<=0)
 	break;
     }
+
+    // debug
+    TIME_DEBUG_OUT << "run_process " << m3_my_rank << " save score: " << mid_score_save << endl;
 
     make_level_info_classifier();
 
