@@ -74,7 +74,8 @@ void Data_Split::multi_split(){
         for (int i=0;i<mlabel.length();i++)
             mlen+=(mlabel[i]==',');
 
-        while (1){
+        while (true){
+            l=0;
             ll=rr;
             if (ll>=mlabel.length() || !mlabel[ll])
                 break;
@@ -97,7 +98,7 @@ void Data_Split::multi_split(){
                 data_config << l << " " << out_name << endl;
             }
 
-            (*(label_file[l])) << index << " " << mlen << " " << mlabel << read_buf << endl;
+            (*(label_file[l])) << index << " " << l << " " << mlen << " " << mlabel << read_buf << endl;
         }
         index++;
         true_label << l << endl;

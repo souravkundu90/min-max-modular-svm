@@ -160,6 +160,10 @@ namespace M3{
                 return si.label_1==label_1 && si.label_2==label_2;
             }
 
+            bool in_multilabel_pipe(Subset_Info & si){
+                return si.label_1==label_1;
+            }
+
             int x(int index){
                 return index/subset_num_2;
             }
@@ -287,6 +291,8 @@ namespace M3{
         void classify_test_data_nonpruning(const string &);
 
         void make_pipe_info_pruning();
+
+        void multilabel_make_pipe_info_pruning();
 
         void send_pipe_info_pruning(Pipe_Info & pi);
 
