@@ -7,6 +7,7 @@ void Hyper_Plane::divide(Data_Sample** data_sample,int sample_length,int subset_
 		  vector<Data_Sample**> & ranked_sample,vector<vector<Divide_Info> > & all_info,char* file)
 
 {
+	cout<<"starting single_label_divide"<<endl;
 	vector<Divide_Info> divide_info;
 	double* rank_value = new double[sample_length];
 	for(int i = 0; i<sample_length;i++)
@@ -24,65 +25,83 @@ void Hyper_Plane::divide(Data_Sample** data_sample,int sample_length,int subset_
 			rank_value[i] += vector[j].value;
 		}
 	}
-
-	quick_sort(rank_value,data_sample,0,sample_length-1); //modified by zhifei.ye from bubble sort to quick sort Mar.12, 2008.
-
-	int subset_num =(int)(sample_length/(double)subset_size+0.5);
-	double average_size = sample_length/(double)subset_num;
-	int count = 0;
-	Divide_Info* d_info = new Divide_Info();
-	for(int i = 0;i<subset_num-1;i++)
-	{
-		d_info->start_offset = count;
-		d_info->end_offset =(int)(average_size*(i+1)-1);
-		d_info->length = d_info->end_offset-d_info->start_offset+1;
-		count = d_info->end_offset+1;
-		divide_info.push_back(*d_info);
-	}
-	d_info->start_offset = count;
-	d_info->end_offset = sample_length-1;
-	d_info->length = d_info->end_offset - d_info->start_offset +1;
-	divide_info.push_back(*d_info);
-
-	double rangeUP = 0;
-	double rangeDOWN = 0;
-	double rangeCURRENT = 0;
-	size_t vecSize = divide_info.size();
-	size_t up_end_index = 0;
-	for(int i=0; i<vecSize; ++i)
-	{
-		rangeUP = (i == 0)? 0 : rangeCURRENT;
-		rangeCURRENT = (i == 0)? (rank_value[divide_info[i].end_offset] - rank_value[divide_info[i].start_offset]): rangeDOWN;
-		rangeDOWN = (i == vecSize - 1)? 0: (rank_value[divide_info[i+1].end_offset] - rank_value[divide_info[i+1].start_offset]);
-		Divide_Info &tempCUR = divide_info[i];
-		if(rangeUP>0.0001)
-		{
-			int j = up_end_index;
-			double bound = rank_value[j] - precent * rangeUP;
-			while(rank_value[j--]>bound)
-			{
-				--(tempCUR.start_offset);
-			}
-		}
-		up_end_index = tempCUR.end_offset;
-		if(rangeDOWN>0.0001)
-		{
-			Divide_Info &tempDOWN = divide_info[i+1];
-			int j = tempDOWN.start_offset;
-			double bound = rank_value[j] + precent * rangeDOWN;
-			while(rank_value[j++]<bound)
-			{
-				++(tempCUR.end_offset);
-			}
-		}
-		tempCUR.length = tempCUR.end_offset - tempCUR.start_offset + 1;
-	}
-	delete d_info;
-	delete[] rank_value;
-	all_info.push_back(divide_info);
 	Data_Sample** new_sample = new Data_Sample*[sample_length];
 	for(int i =0;i<sample_length;i++)
 		new_sample[i] = data_sample[i];
+	divide_one(new_sample,rank_value,sample_length,subset_size,divide_info);
+	//debug
+	for(int i =0;i<divide_info.size();i++)
+	{
+		Divide_Info d_info = divide_info[i];
+		cout<<d_info.length<<":"<<d_info.start_offset<<":"<<d_info.end_offset<<"\t";
+	}
+	//debug
+	delete[] rank_value;
+	all_info.push_back(divide_info);
 	ranked_sample.push_back(new_sample);
 }
 
+void filter_sample(Data_Sample** data_sample,int sample_length, float filter_label,vector<Data_Sample*> filted_sample)
+{
+	for(int i =0;i<sample_length;i++)
+	{
+		Data_Sample* sample = data_sample[i];
+		bool keep = true;
+		for(int j = 0;j < sample->mlabel_len;j++)
+		{
+			if(sample->mlabel[j] == filter_label)
+				keep = false;
+		}
+		if(keep)
+		{
+			filted_sample.push_back(sample);
+		}
+	}
+}
+
+
+void Hyper_Plane::multi_label_divide(Data_Sample** data_sample,int sample_length,int subset_size,float label, 
+						 vector<Data_Sample**> & ranked_sample,vector<vector<Divide_Info> >&all_info,char* file,vector<float> all_label)
+{
+	//debug
+	cout<<"starting multi_label_divide"<<endl;
+	//debug
+	vector<Divide_Info> divide_info;
+	vector<Data_Sample*> filted_sample;
+	for(int label_index = 0; label_index < all_label.size();label_index++)
+	{
+		float current_label = all_label[label_index];
+		if(current_label == label)
+		{
+			vector<Data_Sample**> temp_sample;
+			vector<vector<Divide_Info> > temp_info;
+			divide(data_sample,sample_length,subset_size,label,temp_sample,temp_info,file);
+			ranked_sample.push_back(temp_sample[0]);
+			all_info.push_back(temp_info[0]);
+			temp_sample.clear();
+			temp_info.clear();
+			continue;
+		}
+		divide_info.clear();
+		filted_sample.clear();
+		filter_sample(data_sample,sample_length,current_label,filted_sample);
+		int filted_sample_length = filted_sample.size();
+		Data_Sample** filted_sample_array = new Data_Sample*[filted_sample_length];
+		double * rank_value = new double[filted_sample_length];
+		for(int i = 0;i<filted_sample_length;i++)
+		{
+			filted_sample_array[i] = filted_sample[i];
+			Data_Node* vector = filted_sample_array[i]->data_vector;
+			int length = filted_sample_array[i]->data_vector_length;
+			rank_value[i] = 0;
+			for(int j = 0; j< length;j++)
+			{
+				rank_value[i] += vector[j].value;
+			}
+		}
+		divide_one(filted_sample_array,rank_value,filted_sample_length,subset_size,divide_info);
+		delete[] rank_value;
+		all_info.push_back(divide_info);
+		ranked_sample.push_back(filted_sample_array);
+	}
+}

@@ -10,33 +10,7 @@ protected:
   double precent;
 public:
 	
-void quick_sort(double* rank_value,Data_Sample** data_sample,int start,int end)
-{
-	if(start == end)
-		return;
-	int i = start -1;
-	int j = end +1;
-	double mid = rank_value[start];
-	do{
-		do{
-			i++;
-		}while(rank_value[i]<mid);
-		do{
-			j--;
-		}while(rank_value[j]>mid);
-		if(i<j)
-		{
-			double temp = rank_value[i];
-			rank_value[i] = rank_value[j];
-			rank_value[j] = temp;
-			Data_Sample* p_temp = data_sample[i];
-			data_sample[i] = data_sample[j];
-			data_sample[j] = p_temp;
-		}
-	}while(i<j);
-	quick_sort(rank_value,data_sample,start,j);
-	quick_sort(rank_value,data_sample,j +1,end);
-}
+	void quick_sort(double* rank_value,Data_Sample** data_sample,int start,int end);
 
   virtual void divide(Data_Sample** data_sample,int sample_length,int subset_size,float label, 
 		  vector<Data_Sample**> &,vector<vector<Divide_Info> >&,char* file)=0;
@@ -45,7 +19,7 @@ void quick_sort(double* rank_value,Data_Sample** data_sample,int start,int end)
   // For one-versus-rest:if the left label is _i means that _i versus rest, where _i is the major label, 
   // then the place of _j(!=_i) is the divide information of label _i when _j is major label where _i is the rest, 
   // and the place of _i is the divide information of label _i.
-  void divide(Data_Sample** data_sample,int sample_length,int subset_size,float label, 
+  virtual void multi_label_divide(Data_Sample** data_sample,int sample_length,int subset_size,float label, 
       vector<Data_Sample**> & vds,vector<vector<Divide_Info> >&vvdi,char* file,vector<float> all_label){
           // This code is only for test
           int num_label=all_label.size();
@@ -70,5 +44,7 @@ void quick_sort(double* rank_value,Data_Sample** data_sample,int start,int end)
 
   void parse(char*);
   virtual ~Divider(){}
+protected:
+  void divide_one(Data_Sample** data_sample,double* rank_value,int sample_length,int subset_size,vector<Divide_Info>& divide_info);
 };
 #endif
