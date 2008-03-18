@@ -3617,7 +3617,7 @@ void M3::M3_Slave::divide_train_data()
         //     m_divide_situation=m3_divider->divide(m_sample_arr,
         // 					  m_train_data_num,
         // 					  m3_subset_size);//added by hoss (be a parameter)
-       //if (!m3_parameter->m3_multilabel)
+       if (!m3_parameter->m3_multilabel)
             m3_divider->divide(m_sample_arr,
             m_train_data_num,
             m3_subset_size,
@@ -3625,7 +3625,7 @@ void M3::M3_Slave::divide_train_data()
             m_sample_arr_pool,
             m_divide_situation_pool,
             "divide_info.config");    
-            /*
+           
         else m3_divider->multi_label_divide(m_sample_arr,
             m_train_data_num,
             m3_subset_size,
@@ -3634,7 +3634,6 @@ void M3::M3_Slave::divide_train_data()
             m_divide_situation_pool,
             "divide_info.config",
             m_index_to_label);
-            */
 
         delete [] m_sample_arr;
     }

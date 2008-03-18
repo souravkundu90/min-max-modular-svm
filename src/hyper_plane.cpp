@@ -75,6 +75,7 @@ void Hyper_Plane::multi_label_divide(Data_Sample** data_sample,int sample_length
 		filted_sample.clear();
 		filter_sample(data_sample,sample_length,current_label,filted_sample);
 		int filted_sample_length = filted_sample.size();
+
 		Data_Sample** filted_sample_array = new Data_Sample*[filted_sample_length];
 		double * rank_value = new double[filted_sample_length];
 		for(int i = 0;i<filted_sample_length;i++)
@@ -88,16 +89,28 @@ void Hyper_Plane::multi_label_divide(Data_Sample** data_sample,int sample_length
 				rank_value[i] += vector[j].value;
 			}
 		}
+
 		divide_one(filted_sample_array,rank_value,filted_sample_length,subset_size,divide_info);
+
 		delete[] rank_value;
-		//debug
-		for(int i =0;i<divide_info.size();i++)
-		{
-			Divide_Info d_info = divide_info[i];
-			cout<<d_info.length<<":"<<d_info.start_offset<<":"<<d_info.end_offset<<"\t";
-		}
-		//debug
 		all_info.push_back(divide_info);
 		ranked_sample.push_back(filted_sample_array);
 	}
+	/*debug
+	for(int j =0;j<all_info.size();j++)
+	{
+		vector<Divide_Info> temp_info = all_info[j];
+		for(int i =0;i<temp_info.size();i++)
+		{
+			Divide_Info d_info = temp_info[i];
+			cout<<d_info.length<<":"<<d_info.start_offset<<":"<<d_info.end_offset<<"\t";
+		}
+		cout<<endl;
+	}
+	for(int j =0;j<ranked_sample.size();j++)
+	{
+		Data_Sample** temp_sample = ranked_sample[j];
+		cout<<temp_sample[0]->index<<" "<<temp_sample[0]->data_vector_length<<endl;
+	}
+	//debug*/
 }
