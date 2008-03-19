@@ -1949,6 +1949,7 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
 
     int first_pr=-1;
     int first_so=-1;
+    int second_pr=-1;
     for (int i=0;i<m_test_subset.size();i++){
         Subset_Info si=m_test_subset[i];
         if (now_id==-1 || !m_pipe_info[now_id].in_multilabel_pipe(si)){
@@ -1972,15 +1973,22 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
         if (si.process_1==first_pr && si.start_1==first_so)
             m_pipe_info[now_id].subset_num_2++;
         m_pipe_info[now_id].total_subset_pair++;
+        if (si.process_2==second_pr){
+            m_pipe_info[now_id].put_multi_versus(1);
+        }
+        else {
+            m_pipe_info[now_id].put_multi_versus(0);
+            second_pr=si.process_2;
+        }
     }
     m_pipe_info[now_id].end_offset=m_test_subset.size();
     if (m3_parameter->m3_pruning_mode==1) // select pruning mode
-        m_pipe_info[now_id].info_complete_sematric_pruning();
+        ;
     else if (m3_parameter->m3_pruning_mode==2)
         m_pipe_info[now_id].info_complete_asematric_pruning();
 
-
     if (m3_parameter->m3_pruning_mode==1){ // select pruning mode
+        /*
         now_id=0;
         for (int i=0;i<m_test_subset.size();i++){
             if (m_pipe_info[now_id].end_offset<i)
@@ -1989,6 +1997,7 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
             m_pipe_info[now_id].
                 level_index[m_pipe_info[now_id].level_sematric_pruning(i-sto)].push_back(i);
         }
+        */
     }
     else if (m3_parameter->m3_pruning_mode==2){
         now_id=0;
@@ -1997,7 +2006,7 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
                 now_id++;
             int sto=m_pipe_info[now_id].start_offset;
             m_pipe_info[now_id].
-                level_index[m_pipe_info[now_id].level_asematric_pruning(i-sto)].push_back(i);
+                level_index[m_pipe_info[now_id].multilabel_level_asematric_pruning(i-sto)].push_back(i);
         }
     }
 
@@ -2328,7 +2337,9 @@ void M3::M3_Master::classify_test_data_pruning(){
 		   << endl;
   }
 
-  make_pipe_info_pruning();
+  if (!m3_parameter->m3_multilabel)
+    make_pipe_info_pruning();
+  else multilabel_make_pipe_info_pruning();
 
   for (int i=0;i<m3_parameter->running_process_num;i++)
     m_pipe_process_use.push_back(false);
@@ -3624,8 +3635,7 @@ void M3::M3_Slave::divide_train_data()
             m_my_label,
             m_sample_arr_pool,
             m_divide_situation_pool,
-            "divide_info.config");    
-           
+            "divide_info.config");             
         else m3_divider->multi_label_divide(m_sample_arr,
             m_train_data_num,
             m3_subset_size,
@@ -3634,6 +3644,7 @@ void M3::M3_Slave::divide_train_data()
             m_divide_situation_pool,
             "divide_info.config",
             m_index_to_label);
+       
 
         delete [] m_sample_arr;
     }
@@ -5499,7 +5510,10 @@ void M3::M3_Run::pipe_classify_test_data_asematric_pruning(string file_name,
   ofstream fout;
   if (mid_score_save){
     char name[100];
-    sprintf(name,"%f_%f",m_level_info[0]->si[0].label_1,m_level_info[0]->si[0].label_2);
+    if (!m3_parameter->m3_multilabel)
+        sprintf(name,"%f_%f",m_level_info[0]->si[0].label_1,m_level_info[0]->si[0].label_2);
+    else 
+        sprintf(name,"%f_rest",m_level_info[0]->si[0].label_1);
     fout.open((SCORE_DIR+name).c_str());
   }
 

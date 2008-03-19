@@ -24,7 +24,7 @@ int main(int argc,char ** argv){
   }
 
   if (M3::flag_score()){
-    M3::score_test_data();
+  //  M3::score_test_data();
   }
 
   if (M3::flag_compare()){

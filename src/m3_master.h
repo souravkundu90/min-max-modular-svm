@@ -84,6 +84,9 @@ namespace M3{
             vector<vector<int> > level_index;
             vector<bool> process_use;
 
+            vector<int> multi_versus_num;//the versus num of subset
+        
+
             Pipe_Info(){
                 start_offset=0;
                 end_offset=0;
@@ -94,10 +97,16 @@ namespace M3{
                 level_in_process.clear();
                 level_index.clear();
                 process_use.clear();
+                multi_versus_num.clear();
             }
 
             const bool operator < (const Pipe_Info & pi) const{
                 return total_level<pi.total_level;
+            }
+
+            void put_multi_versus(int flag){
+                if (flag==0) multi_versus_num.push_back(1);
+                else multi_versus_num[multi_versus_num.size()-1]++;
             }
 
             void info_complete_sematric_pruning(){
@@ -178,6 +187,16 @@ namespace M3{
 
             int level_asematric_pruning(int index){
                 return y(index);
+            }
+
+            int multilabel_level_asematric_pruning(int index){
+                int nv=0;
+                int sum=0;
+                for (;sum+multi_versus_num[nv]<=index;nv++)
+                    sum+=multi_versus_num[nv];
+                int id=index-sum;
+                int p=(sum/subset_num_1)+(id%(multi_versus_num[nv]/subset_num_1));
+                return p;
             }
 
             int pre_process(int index){
