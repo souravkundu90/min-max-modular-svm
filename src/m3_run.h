@@ -217,6 +217,7 @@ private:
             test_num=tn;
             line_num=ln;
             min_vector=new float[len];
+            for (int i=0;i<len;i++) min_vector[i]=1;
         }
 
         void del_mliap(){
@@ -228,7 +229,8 @@ private:
         }
 
         void clear(){
-            memset(min_vector,0,len*sizeof(float));
+            for (int i=0;i<len;i++) min_vector[i]=1;
+            //memset(min_vector,0,len*sizeof(float));
         }
 
         float max_vector(int id){

@@ -335,6 +335,12 @@ namespace M3{
 
         void score_test_data_pruning(vector<bool> test_flag);
 
+        void score_multilabel_pruning(vector<bool> test_flag);
+
+        void compare_true_singlelabel(const string &);
+
+        void compare_true_multilabel(const string &);
+
     public:
         M3_Master();
         void load_train_data(const string &);

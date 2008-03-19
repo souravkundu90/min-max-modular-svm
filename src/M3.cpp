@@ -2620,7 +2620,7 @@ void M3::M3_Master::score_test_data_nonpruning(vector<bool> test_flag){
 void M3::M3_Master::score_file_combine_pruning(){
 
   for (int i=0;i<m_index_to_label.size()-1;i++){
-    char cmb_name[10];
+    char cmb_name[100];
     sprintf(cmb_name,"%f",m_index_to_label[i]);
     ofstream file_out((SCORE_DIR+cmb_name).c_str());
     ifstream * file_in=new ifstream[m_index_to_label.size()];
@@ -2667,7 +2667,7 @@ void M3::M3_Master::score_test_data_pruning(vector<bool> test_flag){
 
   ifstream * file_in=new ifstream[label_len-1];
   for (int i=0;i<label_len-1;i++){
-    char name[10];
+    char name[100];
     sprintf(name,"%f",m_index_to_label[i]);
     file_in[i].open((SCORE_DIR+name).c_str());
   }
@@ -2711,6 +2711,58 @@ void M3::M3_Master::score_test_data_pruning(vector<bool> test_flag){
   delete [] score_matrix;
 }
 
+void M3::M3_Master::score_multilabel_pruning(vector<bool> test_flag){
+    
+  ofstream result(RESULT.c_str());
+
+  int label_len=m_index_to_label.size();
+
+  ifstream * file_in=new ifstream[label_len];
+  for (int i=0;i<label_len;i++){
+    char name[100];
+    sprintf(name,"%f_rest",m_index_to_label[i]);
+    file_in[i].open((SCORE_DIR+name).c_str());
+  }
+
+  // debug
+  cout << "Beging to score the result " << test_flag.size() << endl;
+
+  for (int id=0;id<test_flag.size();id++){
+      bool flag=false;
+      bool pos=false;
+      double msc=-1;
+      int msci=0;
+      result << id << " ";
+      for (int i=0;i<label_len;i++){    
+          int index; 
+          double sc;
+          file_in[i] >> index >> sc;
+          if (sc>=0){
+              if (flag)
+                  result << ",";
+              result << m_index_to_label[i];
+              pos=true;
+              flag=true;
+          }
+          if (msc<sc){
+              msc=sc;
+              msci=i;
+          }
+      }
+      if (!pos)
+          result << m_index_to_label[msci];
+      result << endl;
+  }
+
+  // debug
+  cout << "Score done " << endl;
+
+
+  result.close();
+  for (int i=0;i<label_len;i++)
+    file_in[i].close();
+  delete [] file_in;
+}
 void M3::M3_Master::score_test_data(){
   load_subset_config();
 
@@ -2723,13 +2775,22 @@ void M3::M3_Master::score_test_data(){
   for (int i=0;i<hossL;i++)
     test_flag.push_back(true);
 
-  if (m3_parameter->m3_pruning_mode==0)
-    score_test_data_nonpruning(test_flag);
-  else if (m3_parameter->m3_pruning_mode!=0 && m3_parameter->m3_pruning_combine_score==0)
-    score_test_data_pruning(test_flag);
+  if (m3_parameter->m3_multilabel)
+      score_multilabel_pruning(test_flag);
+  else{
+      if (m3_parameter->m3_pruning_mode==0)
+          score_test_data_nonpruning(test_flag);
+      else if (m3_parameter->m3_pruning_mode!=0 && m3_parameter->m3_pruning_combine_score==0)
+          score_test_data_pruning(test_flag);
+  }
+
+  // debug
+  TIME_DEBUG_OUT << " score over" << endl;
+
+
 }
 
-void M3::M3_Master::compare_true_label(const string &filename){
+void M3::M3_Master::compare_true_singlelabel(const string &filename){
   ifstream m3_out(RESULT.c_str());
   ifstream true_out(filename.c_str());
   ofstream result(RESULT_COMPARE.c_str());
@@ -2799,36 +2860,105 @@ void M3::M3_Master::compare_true_label(const string &filename){
   true_out.close();
   result.close();
 }
+void M3::M3_Master::compare_true_multilabel(const string & filename){
+  ifstream m3_out(RESULT.c_str());
+  ifstream true_out(filename.c_str());
+  ofstream result(RESULT_COMPARE.c_str());
+
+  map<double,int> m3_number,true_number,same_number;
+  string tmp;
+
+  double m3_label,true_label;
+  string m3_mlabel,true_mlabel;
+  while (m3_out >> tmp >> m3_mlabel){
+      true_out >> true_mlabel;
+
+      result << tmp << " " << m3_mlabel << " " << true_mlabel << endl;
+
+      set<float> mlabels;
+      mlabels.clear();
+      int pri=0;
+
+      for (int i=0;pri<=m3_mlabel.size();i++)
+          if (i>=m3_mlabel.size() || m3_mlabel[i]==','){
+              m3_label=atof(m3_mlabel.substr(pri,i-pri).c_str());
+              pri=i+1;
+              if (m3_number.find(m3_label)==m3_number.end())
+                  m3_number[m3_label]=0;
+              m3_number[m3_label]++;
+              mlabels.insert(m3_label);
+          }
 
 
+      pri=0;  
+      for (int i=0;pri<=true_mlabel.size();i++)
+          if (i>=true_mlabel.size() || true_mlabel[i]==','){
+              true_label=atof(true_mlabel.substr(pri,i-pri).c_str());
+              pri=i+1;
+              if (true_number.find(true_label)==true_number.end())
+                  true_number[true_label]=0;
+              true_number[true_label]++;
 
 
+              if (mlabels.find(true_label)!=mlabels.end()){
+                  if (same_number.find(m3_label)==same_number.end())
+                      same_number[true_label]=0;
+                  same_number[true_label]++;
+              }
+          }
+  }
 
+  result << endl << endl << endl;
 
+  int all_same=0,all=0;
+  double macro_precition=0;
+  double macro_recall=0;
+  double macro_f1=0;
+  for (int i=0;i<m_index_to_label.size();i++){
+    double ll=m_index_to_label[i];
+    double precition=1.0*same_number[ll]/m3_number[ll];
+    double recall=1.0*same_number[ll]/true_number[ll];
+    double F1=1.0*precition*recall*2/(precition+recall);
+    result << "Label " << ll  
+	   << "\t\tm3 : "  << m3_number[ll]
+	   << "\t\ttrue : " << true_number[ll]
+	   << "\t\tright : " << same_number[ll]
+	   << "\t\tprecition : " << precition*100.0 << "%"
+	   << "\t\trecall : " << recall*100.0 << "%" 
+	   << "\t\tF1 : " << F1*100.0 << "%"
+	   << endl;
 
+    macro_precition+=precition;
+    macro_recall+=recall;
 
+    all_same+=same_number[ll];
+    all+=true_number[ll];
+  }
 
+  macro_precition/=m_index_to_label.size();
+  macro_recall/=m_index_to_label.size();
+  macro_f1=macro_precition*macro_recall*2/(macro_precition+macro_recall);
 
+  result << endl
+	 << "all accurace : " << 100.0*all_same/all << "%" << endl;
+  result << "macro_precition : " << 100.0*macro_precition << "%" << endl;
+  result << "macro_recall : " << 100.0*macro_recall << "%" << endl;
+  result << "macro_f1 : " << 100.0*macro_f1 << "%" << endl;
 
+  m3_out.close();
+  true_out.close();
+  result.close();
+}
+void M3::M3_Master::compare_true_label(const string & filename){
 
+    if (!m3_parameter->m3_multilabel){
+        compare_true_singlelabel(filename);
+    }
+    else {
+        compare_true_multilabel(filename);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 //M3_Slave
 
 
