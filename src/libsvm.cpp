@@ -7,6 +7,7 @@
 #define min(a,b) a>b?b:a
 
 using namespace std;
+
 class Kernel
 {
 public :
@@ -333,30 +334,6 @@ int seek(char* buf,int bufsize,char objective)
 	{
 		return i;
 	}
-}
-typedef basic_string<char>::size_type S_T;
-static const S_T npos = -1;
-vector<string> split(const string& src, string delimit, 
-
-		string null_subst="")
-{
-	if( src.empty() || delimit.empty() ) throw "split:empty string\0";
-
-	vector<string> v;
-	S_T deli_len = delimit.size();
-	long index = npos, last_search_position = 0;
-	while( (index=src.find(delimit,last_search_position))!=npos )
-	{
-		 if(index==last_search_position)
-			   v.push_back(null_subst);
-		  else
-			    v.push_back( src.substr(last_search_position, 
-							index-last_search_position) );
-		   last_search_position = index + deli_len;
-	}
-	string last_one = src.substr(last_search_position);
-	v.push_back( last_one.empty()? null_subst:last_one );
-	return v;
 }
 
 int libsvm::load_model(const char* fileURL)

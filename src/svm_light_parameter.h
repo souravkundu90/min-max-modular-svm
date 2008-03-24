@@ -1,13 +1,14 @@
 #ifndef _SVM_Light_Parameter_H
 #define _SVM_Light_Parameter_H
+#include "parameter.h"
+
 extern "C"
 {
 # include "svm_common.h"
 # include "svm_learn.h"
 }
 
-#include "parameter.h"
-class svm_light_parameter:public Classifier_Parameter
+class svm_light_parameter : public Classifier_Parameter
 {
 public:
   long verbosity;

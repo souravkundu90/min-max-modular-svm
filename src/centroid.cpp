@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 using namespace std;
-extern vector<string> split(const string& src, string delimit, 
-		string null_subst="");
+
+
 double inner_product(Data_Sample *a, Data_Sample *b) 
 	/* compute the inner product of two sparse vectors */
 {

@@ -3493,53 +3493,53 @@ void M3::M3_Slave::load_train_data_parallel(){
 
     int memory_test_tms=0;
 
-    while (!feof(data_file)){
+	while (!feof(data_file)){
 
-      if (!memory_test(1,NODE_SIMPLE_BUF_SIZE)){
+		if (!memory_test(1,NODE_SIMPLE_BUF_SIZE)){
 
-	// debug
-	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-		       << " memory is not more enough " << endl;
+			// debug
+			TIME_DEBUG_OUT << "slave_process " << m3_my_rank
+				<< " memory is not more enough " << endl;
 
-	read_done_flag=false;
-	break;
-      }
+			read_done_flag=false;
+			break;
+		}
 
-//       // debug
-//       // debug
-//       // debug
-//       memory_test_tms++;
-//       if (memory_test_tms>=150){
+		//       // debug
+		//       // debug
+		//       // debug
+		//       memory_test_tms++;
+		//       if (memory_test_tms>=150){
 
-// 	// debug
-// 	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-// 		       << " memory is not more enough " << endl;
+		// 	// debug
+		// 	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
+		// 		       << " memory is not more enough " << endl;
 
-// 	read_done_flag=false;
-// 	break;
-//       }
+		// 	read_done_flag=false;
+		// 	break;
+		//       }
 
 
-      memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
-      int index=0;
-      int node_len=0;
+		memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
+		int index=0;
+		int node_len=0;
 
-      char cc;
-      while (1){			// igore "nl" && "er"
-	cc=getc(data_file);
-	if (cc!=10 && cc!=13)
-	  break;
-      }
-      read_buf[index++]=cc;
-      if (cc==EOF)		// file over
-	break;
-      while (1){
-	cc=getc(data_file);
-	if (cc==10 || cc==13 || cc==EOF)
-	  break;
-	node_len+=(cc==':');
-	read_buf[index++]=cc;
-      }
+		char cc;
+		while (1){			// igore "nl" && "er"
+			cc=getc(data_file);
+			if (cc!=10 && cc!=13)
+				break;
+		}
+		read_buf[index++]=cc;
+		if (cc==EOF)		// file over
+			break;
+		while (1){
+			cc=getc(data_file);
+			if (cc==10 || cc==13 || cc==EOF)
+				break;
+			node_len+=(cc==':');
+			read_buf[index++]=cc;
+		}
 
  //     // debug
  //      TIME_DEBUG_OUT << "slave_process " << m3_my_rank << "has read the buf: " << read_buf << endl;

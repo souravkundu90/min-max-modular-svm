@@ -4,6 +4,7 @@
 #include "vector"
 #include "string.h"
 #include "time.h"
+
 #define min(a,b) a>b?b:a
 //#define debug
 extern "C"
@@ -18,6 +19,7 @@ extern "C"
 	CFLOAT kernel(KERNEL_PARM *kernel_parm, DOC *a, DOC *b);
 }
 using namespace std;
+
 svm_light::svm_light(svm_light_parameter param)
 {
 	this->param = param;
@@ -615,8 +617,6 @@ int svm_light::save_model(const char* model_file)
 	  fclose(modelfl);
 	  return 1;
 }
-extern vector<string> split(const string& src, string delimit, 
-		string null_subst="");
 
 int svm_light::load_model(const char* model_file)
 {
