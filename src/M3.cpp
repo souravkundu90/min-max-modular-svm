@@ -121,9 +121,9 @@ void M3::initialize(int argc,char * argv[]){
     data_sample_len[0]=1;
     data_sample_len[1]=1;
     data_sample_len[2]=1;
-    data_sample_len[3]=1;
+    data_sample_len[3]=MPI_POINTER_LENGTH;
     data_sample_len[4]=1;
-    data_sample_len[5]=1;
+    data_sample_len[5]=MPI_POINTER_LENGTH;
     MPI_Datatype data_sample_type[6];
     data_sample_type[0]=MPI_INT;
     data_sample_type[1]=MPI_FLOAT;
@@ -136,7 +136,7 @@ void M3::initialize(int argc,char * argv[]){
     data_sample_offset[1]=data_sample_offset[0]+sizeof(MPI_INT);
     data_sample_offset[2]=data_sample_offset[1]+sizeof(MPI_FLOAT);
     data_sample_offset[3]=data_sample_offset[2]+sizeof(MPI_INT);
-    data_sample_offset[4]=data_sample_offset[3]+sizeof(MPI_POINTER);
+    data_sample_offset[4]=data_sample_offset[3]+sizeof(MPI_POINTER)*MPI_POINTER_LENGTH;
     data_sample_offset[5]=data_sample_offset[4]+sizeof(MPI_INT);
     MPI_Type_struct(6,
         data_sample_len,
@@ -1899,24 +1899,24 @@ void M3::M3_Master::make_pipe_info_pruning(){
   
 
   if (m3_parameter->m3_pruning_mode==1){ // select pruning mode
-    now_id=0;
-    for (int i=0;i<m_test_subset.size();i++){
-      if (m_pipe_info[now_id].end_offset<i)
-	now_id++;
-      int sto=m_pipe_info[now_id].start_offset;
-      m_pipe_info[now_id].
-	level_index[m_pipe_info[now_id].level_sematric_pruning(i-sto)].push_back(i);
-    }
+      now_id=0;
+      for (int i=0;i<m_test_subset.size();i++){
+          if (m_pipe_info[now_id].end_offset<i)
+              now_id++;
+          int sto=m_pipe_info[now_id].start_offset;
+          m_pipe_info[now_id].
+              level_index[m_pipe_info[now_id].level_sematric_pruning(i-sto)].push_back(i);
+      }
   }
   else if (m3_parameter->m3_pruning_mode==2){
-    now_id=0;
-    for (int i=0;i<m_test_subset.size();i++){
-      if (m_pipe_info[now_id].end_offset<i)
-	now_id++;
-      int sto=m_pipe_info[now_id].start_offset;
-      m_pipe_info[now_id].
-	level_index[m_pipe_info[now_id].level_asematric_pruning(i-sto)].push_back(i);
-    }
+      now_id=0;
+      for (int i=0;i<m_test_subset.size();i++){
+          if (m_pipe_info[now_id].end_offset<i)
+              now_id++;
+          int sto=m_pipe_info[now_id].start_offset;
+          m_pipe_info[now_id].
+              level_index[m_pipe_info[now_id].level_asematric_pruning(i-sto)].push_back(i);
+      }
   }
 
   for (int i=0;i<m_pipe_info.size();i++)
@@ -1956,7 +1956,7 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
             if (now_id!=-1){
                 m_pipe_info[now_id].end_offset=i-1;
                 if (m3_parameter->m3_pruning_mode==1) // select pruning mode
-                    ;
+                    m_pipe_info[now_id].info_complete_sematric_pruning();
                 else if (m3_parameter->m3_pruning_mode==2)
                     m_pipe_info[now_id].info_complete_asematric_pruning();
             }
@@ -1983,21 +1983,22 @@ void M3::M3_Master::multilabel_make_pipe_info_pruning(){
     }
     m_pipe_info[now_id].end_offset=m_test_subset.size();
     if (m3_parameter->m3_pruning_mode==1) // select pruning mode
-        ;
+        m_pipe_info[now_id].info_complete_sematric_pruning();
     else if (m3_parameter->m3_pruning_mode==2)
         m_pipe_info[now_id].info_complete_asematric_pruning();
 
+    // debug  
+    TIME_DEBUG_OUT << "Master make pipe infomation info_complete done" << endl;
+
     if (m3_parameter->m3_pruning_mode==1){ // select pruning mode
-        /*
         now_id=0;
         for (int i=0;i<m_test_subset.size();i++){
             if (m_pipe_info[now_id].end_offset<i)
                 now_id++;
             int sto=m_pipe_info[now_id].start_offset;
             m_pipe_info[now_id].
-                level_index[m_pipe_info[now_id].level_sematric_pruning(i-sto)].push_back(i);
+                level_index[m_pipe_info[now_id].multilabel_level_sematric_pruning(i-sto)].push_back(i);
         }
-        */
     }
     else if (m3_parameter->m3_pruning_mode==2){
         now_id=0;
@@ -3493,53 +3494,53 @@ void M3::M3_Slave::load_train_data_parallel(){
 
     int memory_test_tms=0;
 
-	while (!feof(data_file)){
+    while (!feof(data_file)){
 
-		if (!memory_test(1,NODE_SIMPLE_BUF_SIZE)){
+      if (!memory_test(1,NODE_SIMPLE_BUF_SIZE)){
 
-			// debug
-			TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-				<< " memory is not more enough " << endl;
+	// debug
+	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
+		       << " memory is not more enough " << endl;
 
-			read_done_flag=false;
-			break;
-		}
+	read_done_flag=false;
+	break;
+      }
 
-		//       // debug
-		//       // debug
-		//       // debug
-		//       memory_test_tms++;
-		//       if (memory_test_tms>=150){
+//       // debug
+//       // debug
+//       // debug
+//       memory_test_tms++;
+//       if (memory_test_tms>=150){
 
-		// 	// debug
-		// 	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-		// 		       << " memory is not more enough " << endl;
+// 	// debug
+// 	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
+// 		       << " memory is not more enough " << endl;
 
-		// 	read_done_flag=false;
-		// 	break;
-		//       }
+// 	read_done_flag=false;
+// 	break;
+//       }
 
 
-		memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
-		int index=0;
-		int node_len=0;
+      memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
+      int index=0;
+      int node_len=0;
 
-		char cc;
-		while (1){			// igore "nl" && "er"
-			cc=getc(data_file);
-			if (cc!=10 && cc!=13)
-				break;
-		}
-		read_buf[index++]=cc;
-		if (cc==EOF)		// file over
-			break;
-		while (1){
-			cc=getc(data_file);
-			if (cc==10 || cc==13 || cc==EOF)
-				break;
-			node_len+=(cc==':');
-			read_buf[index++]=cc;
-		}
+      char cc;
+      while (1){			// igore "nl" && "er"
+	cc=getc(data_file);
+	if (cc!=10 && cc!=13)
+	  break;
+      }
+      read_buf[index++]=cc;
+      if (cc==EOF)		// file over
+	break;
+      while (1){
+	cc=getc(data_file);
+	if (cc==10 || cc==13 || cc==EOF)
+	  break;
+	node_len+=(cc==':');
+	read_buf[index++]=cc;
+      }
 
  //     // debug
  //      TIME_DEBUG_OUT << "slave_process " << m3_my_rank << "has read the buf: " << read_buf << endl;
@@ -4577,10 +4578,14 @@ void M3::M3_Run::training_train_data(){
 
       double dtm_1=MPI_Wtime();
 
+      try{
       subset_info.subset_memory=tempClass->train(m_sample_subset_1,m_sample_subset_2,
 						 m_data_subset_num_1,m_data_subset_num_2,
 						 m_sample_subset_len_1,m_sample_subset_len_2,
 						 save_dir.c_str());
+      }catch (exception e){
+          
+      }
 
       double dtm_2=MPI_Wtime();
 

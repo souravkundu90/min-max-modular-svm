@@ -1,8 +1,6 @@
 #ifndef _UTIL_H
 #define _UTIL_H
-#include <string>
-#include <vector>
-using namespace std;
+
 struct Data_Node{
     int index;
     float value;
@@ -33,6 +31,4 @@ struct Subset_Info{
     int end_1,end_2;
 };
 
-vector<string> split(const string& src, string delimit,
-		string null_subst="");
 #endif
