@@ -263,7 +263,7 @@ namespace M3{
         int subset_config_index;
 
 
-        map<int, vector<int>> m_process_train_subset_multinum; 
+        map<int, vector<int> > m_process_train_subset_multinum; 
         // the subset number of all divide in a process is not the same when does multi-label
 
 
