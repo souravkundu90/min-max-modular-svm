@@ -816,9 +816,12 @@ void M3::M3_Master::load_train_data_parallel(string file_name){
   TIME_DEBUG_OUT << "master begin to split train data as label" << endl;
 
   Data_Split * data_split=new Data_Split(file_name,READ_BUF_SIZE);
+  data_split->multi_split();
+  /*
   if (!m3_parameter->m3_multilabel)
     data_split->split();
   else data_split->multi_split();
+  */
   delete data_split;
 
   // debug
