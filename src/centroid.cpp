@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 using namespace std;
-
-
 double inner_product(Data_Sample *a, Data_Sample *b) 
 	/* compute the inner product of two sparse vectors */
 {
