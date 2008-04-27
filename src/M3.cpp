@@ -3427,6 +3427,8 @@ void M3::M3_Slave::load_train_data_parallel(){
 	     &mpi_status);
   }
 
+  double read_file_time=0,parse_data_time=0;
+
   if (m_il_process_rank!=-1){
 
     // debug
@@ -3497,8 +3499,10 @@ void M3::M3_Slave::load_train_data_parallel(){
 
     int memory_test_tms=0;
 
+    
     while (!feof(data_file)){
 
+        /*
       if (!memory_test(1,NODE_SIMPLE_BUF_SIZE)){
 
 	// debug
@@ -3508,26 +3512,14 @@ void M3::M3_Slave::load_train_data_parallel(){
 	read_done_flag=false;
 	break;
       }
+      */
 
-//       // debug
-//       // debug
-//       // debug
-//       memory_test_tms++;
-//       if (memory_test_tms>=150){
-
-// 	// debug
-// 	TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-// 		       << " memory is not more enough " << endl;
-
-// 	read_done_flag=false;
-// 	break;
-//       }
-
-
-      memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
+    double stime=MPI_Wtime();
+    
+      //memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
       int index=0;
       int node_len=0;
-
+/*
       char cc;
       while (1){			// igore "nl" && "er"
 	cc=getc(data_file);
@@ -3544,10 +3536,22 @@ void M3::M3_Slave::load_train_data_parallel(){
 	node_len+=(cc==':');
 	read_buf[index++]=cc;
       }
+      */
+
+      
+      if (fgets(read_buf,READ_BUF_SIZE,data_file)==NULL)
+          break;
+      index=strlen(read_buf);
+      for (int i=0;i<index;i++)
+          node_len+=(read_buf[i]==':');
+      double etime=MPI_Wtime();
+
+      read_file_time+=etime-stime;
 
  //     // debug
  //      TIME_DEBUG_OUT << "slave_process " << m3_my_rank << "has read the buf: " << read_buf << endl;
 
+      stime=MPI_Wtime();
       Data_Sample * sample=new Data_Sample;
       Data_Node * node=new Data_Node[node_len];
       sample->data_vector=node;
@@ -3556,10 +3560,11 @@ void M3::M3_Slave::load_train_data_parallel(){
 
       m_my_label=sample->label;
 
+
       BEGIN_DEBUG;
       // debug
       TIME_DEBUG_OUT << "slave_process " << m3_my_rank
-		     << " has parse the buf " << endl;
+          << " has parse the buf :" << read_buf << endl;
       END_DEBUG;
 
       data_unpackage(sample,
@@ -3568,6 +3573,9 @@ void M3::M3_Slave::load_train_data_parallel(){
 		     node_len);
 
       sample_num++;
+
+      etime=MPI_Wtime();
+      parse_data_time+=etime-stime;
 
       // debug
 //       TIME_DEBUG_OUT << "slave_process " << m3_my_rank 
@@ -3590,6 +3598,10 @@ void M3::M3_Slave::load_train_data_parallel(){
 
     }
 
+      // debug
+     TIME_DEBUG_OUT << "Slave IO use time:" << read_file_time << endl;
+     TIME_DEBUG_OUT << "Slave parse use time:" << parse_data_time << endl;
+
     file_offset=ftell(data_file);
     if (read_done_flag)
       situation=CTRL_READ_DONE;
@@ -3609,6 +3621,8 @@ void M3::M3_Slave::load_train_data_parallel(){
   }
 
   delete [] read_buf;
+
+
 
   // debug
   //  check_load_data();
