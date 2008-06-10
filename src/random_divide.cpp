@@ -19,7 +19,7 @@ void Random_Divide::divide(Data_Sample** data_sample,int sample_length,int subse
 	Divide_Info* d_info = new Divide_Info();
 	for(int i = 0;i<subset_num-1;i++)
 	{
-		d_info->start_offset = count;++++++++
+		d_info->start_offset = count;
 		d_info->end_offset =(int)(average_size*(i+1)-1);
 		d_info->length = d_info->end_offset-d_info->start_offset+1;
 		count = d_info->end_offset+1;
