@@ -1441,6 +1441,9 @@ void M3::M3_Master::training_train_data(){
 }
 
 void M3::M3_Master::save_for_increase_learning(){
+
+  // TODO
+
  if (m3_parameter->m3_save_for_increase_learning){
     // debug
     TIME_DEBUG_OUT << "Master to save for increase learning" << endl;
@@ -3305,9 +3308,8 @@ bool M3::M3_Slave::memory_test(int sp_buf_len,
 
 void M3::M3_Slave::increase_learning_pre_load(){
 
-
   char buf[100];
-  sprintf(buf,"%s%d",DIVID_DATA_IL_DIR.c_str(),m3_my_rank);
+  sprintf(buf,"%s%d",DIVID_DATA_IL_DIR.c_str(),m_il_process_rank);
   ifstream conf(buf);
 
   // debug
@@ -3354,7 +3356,7 @@ void M3::M3_Slave::increase_learning_pre_load(){
   conf.close();
 
   memset(buf,0,sizeof(buf));
-  sprintf(buf,"%s%d.dat",DIVID_DATA_IL_DIR.c_str(),m3_my_rank);
+  sprintf(buf,"%s%d.dat",DIVID_DATA_IL_DIR.c_str(),m_il_process_rank);
   ifstream data(buf);
 
   // debug
@@ -3363,7 +3365,6 @@ void M3::M3_Slave::increase_learning_pre_load(){
   char * read_buf=new char[READ_BUF_SIZE];
 
   while (true){
-    memset(read_buf,0,sizeof(char)*READ_BUF_SIZE);
     if (!data.getline(read_buf,READ_BUF_SIZE))
       break;
 
@@ -3399,6 +3400,27 @@ void M3::M3_Slave::increase_learning_pre_load(){
   }
   delete [] read_buf;
   data.close();
+
+
+  if (m3_parameter->m3_save_for_increase_learning){
+    char buf1[100],buf2[100];
+    sprintf(buf1,"%s%d",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    sprintf(buf2,"%s%d_bck",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    rename(buf1,buf2);
+    memset(buf1,0,sizeof(buf1));
+    memset(buf2,0,sizeof(buf2));
+    sprintf(buf1,"%s%d.dat",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    sprintf(buf2,"%s%d.dat_bck",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    rename(buf1,buf2);
+  }
+
+
+  // debug
+  TIME_DEBUG_OUT << "Slave " << m3_my_rank << " preload done" << endl;
 
   // debug
   BEGIN_DEBUG;
@@ -3757,7 +3779,8 @@ void M3::M3_Slave::divide_train_data()
         // debug
         TIME_DEBUG_OUT << "save for next" << endl;
 
-        //save_for_increase_learning();
+
+	save_for_increase_learning();
 
         // debug
         TIME_DEBUG_OUT << "divide done" << endl;
@@ -3840,6 +3863,13 @@ void M3::M3_Slave::divide_train_data()
 void M3::M3_Slave::save_data_for_increase_learning(ofstream & os,
 						   Data_Sample & ds){
   os << ds.index << " " << ds.label << " ";
+  os << ds.mlabel_len << " ";
+  for (int i=0;i<ds.mlabel_len;i++){
+    if (i!=0)
+      os << ",";
+    os << ds.mlabel[i];
+  }
+  os << " ";
   for (int i=0;i<ds.data_vector_length;i++){
     os << ds.data_vector[i].index << ":" << ds.data_vector[i].value;
     if (i!=ds.data_vector_length-1)
@@ -3854,6 +3884,23 @@ void M3::M3_Slave::save_for_increase_learning(){
 
   // debug
   TIME_DEBUG_OUT << "save for increase learning" << endl;
+
+  if (m_il_process_rank!=-1){
+    char buf1[100],buf2[100];
+    sprintf(buf1,"%s%d_bck",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    sprintf(buf2,"%s%d",
+	    DIVID_DATA_IL_DIR,m3_my_rank);
+    rename(buf1,buf2);
+    memset(buf1,0,sizeof(buf1));
+    memset(buf2,0,sizeof(buf2));
+    sprintf(buf1,"%s%d.dat_bck",
+	    DIVID_DATA_IL_DIR,m_il_process_rank);
+    sprintf(buf2,"%s%d.dat",
+	    DIVID_DATA_IL_DIR,m3_my_rank);
+    rename(buf1,buf2);
+    return;
+  }
 
   int pl=m_divide_situation_pool.size();
 
@@ -5536,7 +5583,10 @@ void M3::M3_Run::pipe_classify_test_data_sematric_pruning(string file_name,
   ofstream fout;
   if (mid_score_save){
     char name[100];
-    sprintf(name,"%f_%f",m_level_info[0]->si[0].label_1,m_level_info[0]->si[0].label_2);
+    if (!m3_parameter->m3_multilabel)
+        sprintf(name,"%f_%f",m_level_info[0]->si[0].label_1,m_level_info[0]->si[0].label_2);
+    else 
+        sprintf(name,"%f_rest",m_level_info[0]->si[0].label_1);
     fout.open((SCORE_DIR+name).c_str());
   }
 

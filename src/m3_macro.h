@@ -20,8 +20,8 @@
 #define MPI_POINTER_LENGTH 1
 
 //64PC
-//#define MPI_POINTER MPI_DOUBLE
-//#define MPI_POINTER_LENGTH 2
+#define MPI_POINTER MPI_DOUBLE
+#define MPI_POINTER_LENGTH 2
 
 
 #endif

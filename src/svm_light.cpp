@@ -277,7 +277,7 @@ int svm_light::train(Data_Sample** sample1,Data_Sample** sample2,
 	if (debug)
 		debug_stream << "saving model"<<endl;
 #endif
-	save_model(model_file);
+   	save_model(model_file);  
 	cout<<"model successfully save to "<<model_file<<endl;
 #ifdef debug	
 	if(debug)
